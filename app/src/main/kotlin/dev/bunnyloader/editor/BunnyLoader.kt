@@ -8,12 +8,12 @@ import android.net.Uri
 import android.provider.DocumentsContract
 
 /**
- * The conversation with Bunny Loader (com.bunnyloader), which is another APK.
+ * The conversation with Bunny Loader, which is another APK.
  * Everything goes through its EditorBridgeActivity, open only to apps with the
  * same signature.
  */
 object BunnyLoader {
-    const val PACKAGE = "com.bunnyloader"
+    const val PACKAGE = BuildConfig.LOADER_PACKAGE
     private const val BRIDGE = "dev.bunnyloader.EditorBridgeActivity"
     private const val ACTION_CONNECT = "com.bunnyloader.action.CONNECT_EDITOR"
     private const val ACTION_TEST = "com.bunnyloader.action.TEST_SOURCE"
@@ -23,7 +23,7 @@ object BunnyLoader {
     const val RESULT_ERROR = android.app.Activity.RESULT_FIRST_USER
 
     /** Bunny Loader's ModSources folder, to open the folder picker right there. */
-    val SOURCES_ROOT: Uri = DocumentsContract.buildDocumentUri("com.bunnyloader.documents", "mod-sources")
+    val SOURCES_ROOT: Uri = DocumentsContract.buildDocumentUri("$PACKAGE.documents", "mod-sources")
 
     enum class Status { READY, NOT_INSTALLED, OUTDATED, WRONG_SIGNATURE }
 
@@ -75,7 +75,7 @@ object BunnyLoader {
         context.getString(R.string.WrongSignature)
     }
 
-    private val BRIDGE_PROVIDER: Uri = Uri.parse("content://com.bunnyloader.editorbridge")
+    private val BRIDGE_PROVIDER: Uri = Uri.parse("content://$PACKAGE.editorbridge")
 
     fun openLauncher(context: Context) {
         context.packageManager.getLaunchIntentForPackage(PACKAGE)?.let { context.startActivity(it) }

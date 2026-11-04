@@ -103,7 +103,7 @@ private fun ConnectScreen(onConnected: (Uri) -> Unit) {
 
     fun accept(uri: Uri?) {
         if (uri == null) return
-        if (uri.authority != "com.bunnyloader.documents" || DocumentsContract.getTreeDocumentId(uri) != "mod-sources") {
+        if (uri.authority != "${BunnyLoader.PACKAGE}.documents" || DocumentsContract.getTreeDocumentId(uri) != "mod-sources") {
             error = wrongFolder
             return
         }

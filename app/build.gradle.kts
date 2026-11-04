@@ -33,11 +33,16 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.bunnyloader.editor"
+        val loaderPackage = (project.findProperty("bl.loader") as String?) ?: "com.bunnyloader.beta"
+        val beta = loaderPackage.endsWith(".beta")
+        applicationId = if (beta) "com.bunnyloader.editor.beta" else "com.bunnyloader.editor"
+        manifestPlaceholders["appLabel"] = if (beta) "BL Editor Beta" else "@string/AppName"
         minSdk = 26
         targetSdk = 34
-        versionCode = 2
-        versionName = "0.2.0"
+        versionCode = 3
+        versionName = "0.2.1"
+        manifestPlaceholders["loaderPackage"] = loaderPackage
+        buildConfigField("String", "LOADER_PACKAGE", "\"$loaderPackage\"")
     }
 
     signingConfigs {
@@ -70,6 +75,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     // The API tree is already gzipped; compressing it again would only slow down opening it.
     androidResources {

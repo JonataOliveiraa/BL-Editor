@@ -75,9 +75,9 @@ BL Editor is a separate app. Bunny Loader exposes:
   - `com.bunnyloader.action.CONNECT_EDITOR` returns a persistable read/write grant on the ModSources tree;
   - `com.bunnyloader.action.TEST_SOURCE` (extra `project` = the project folder) builds, installs, enables and opens
     the game. Errors come back as `RESULT_FIRST_USER` with the `error` and `errorCode` extras.
-- `EditorBridgeProvider` (`content://com.bunnyloader.editorbridge`, same permission): `call("install", project)`
+- `EditorBridgeProvider` (`content://<package>.editorbridge`, same permission): `call("install", project)`
   builds, installs and enables without any screen. It returns `ok` and, on failure, `error`.
-- The `com.bunnyloader.documents` document provider, which the editor uses for every file operation.
+- The `<package>.documents` document provider, which the editor uses for every file operation.
 
 If the signatures differ, the editor can still open the folder through the system picker
 ("Choose the folder manually"), but Test will not work.
