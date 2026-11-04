@@ -16,6 +16,21 @@ class Workspace(private val context: Context, val tree: Uri) {
 
     data class Entry(val uri: Uri, val name: String, val directory: Boolean, val size: Long, val path: String)
 
+    /** What a project is, by the `type` of its manifest (the same spellings Bunny Loader accepts). */
+    enum class Kind {
+        MOD, TEXTURE, FONT;
+
+        companion object {
+            private val ALIASES = mapOf(
+                "texture" to TEXTURE, "textures" to TEXTURE, "textura" to TEXTURE, "texturas" to TEXTURE,
+                "resourcepack" to TEXTURE, "resource-pack" to TEXTURE,
+                "font" to FONT, "fonts" to FONT, "fonte" to FONT, "fontes" to FONT,
+            )
+
+            fun of(type: String): Kind = ALIASES[type.trim().lowercase()] ?: MOD
+        }
+    }
+
     data class Project(
         val folder: Entry,
         val id: String,
@@ -23,6 +38,8 @@ class Workspace(private val context: Context, val tree: Uri) {
         val version: String,
         val error: String?,
         val icon: Uri? = null,
+        val kind: Kind = Kind.MOD,
+        val author: String = "",
     )
 
     val root: Uri = Docs.buildDocumentUriUsingTree(tree, Docs.getTreeDocumentId(tree))
@@ -55,10 +72,16 @@ class Workspace(private val context: Context, val tree: Uri) {
             val manifest = files.firstOrNull { it.name == MANIFEST && !it.directory } ?: error("Missing manifest.json")
             val json = JSONObject(readText(manifest.uri))
             Project(folder.copy(path = ""), json.optString("id"), json.optString("name").ifBlank { folder.name },
-                json.optString("version"), null, icon)
+                json.optString("version"), null, icon, Kind.of(json.optString("type")), authorOf(json))
         } catch (e: Exception) {
             Project(folder.copy(path = ""), "", folder.name, "", e.message ?: e.javaClass.simpleName, icon)
         }
+    }
+
+    private fun authorOf(json: JSONObject): String {
+        json.optString("author").takeIf { it.isNotBlank() }?.let { return it }
+        val first = json.optJSONArray("authors")?.opt(0) ?: return ""
+        return (first as? JSONObject)?.optString("name") ?: first.toString()
     }
 
     /** A small image (the mod icon), already decoded; null if it cannot be. */
@@ -108,10 +131,56 @@ class Workspace(private val context: Context, val tree: Uri) {
             ?: error("Cannot write file")
     }
 
+    fun readBytes(uri: Uri): ByteArray =
+        resolver.openInputStream(uri)?.use { it.readBytes() } ?: error("Cannot open file")
+
+    fun writeBytes(uri: Uri, bytes: ByteArray) {
+        resolver.openOutputStream(uri, "wt")?.use { it.write(bytes) } ?: error("Cannot write file")
+    }
+
+    fun output(uri: Uri): java.io.OutputStream = resolver.openOutputStream(uri, "wt") ?: error("Cannot write file")
+
     fun createFile(parent: Uri, name: String): Uri {
         validateName(name)
         check(children(parent).none { it.name.equals(name, true) }) { "\"$name\" already exists" }
         return Docs.createDocument(resolver, parent, "text/plain", name) ?: error("Cannot create \"$name\"")
+    }
+
+    /** The file at [path] under [base], creating what is missing; an existing one is reused. */
+    fun fileAt(base: Uri, path: String): Uri {
+        var folder = base
+        val parts = path.split('/').filter { it.isNotEmpty() }
+        for (part in parts.dropLast(1)) {
+            val found = children(folder).firstOrNull { it.name.equals(part, true) }
+            folder = if (found != null) found.uri else createFolder(folder, part)
+        }
+        val name = parts.last()
+        return children(folder).firstOrNull { it.name.equals(name, true) }?.uri ?: createFile(folder, name)
+    }
+
+    /** Every file below [folder], with paths relative to it. */
+    fun allFiles(folder: Uri, prefix: String = ""): List<Entry> {
+        val result = ArrayList<Entry>()
+        for (entry in children(folder, prefix)) {
+            if (entry.directory) result.addAll(allFiles(entry.uri, entry.path)) else result.add(entry)
+        }
+        return result
+    }
+
+    /**
+     * The project as a package Bunny Loader imports (a zip with the manifest at the root), leaving out
+     * what its own packager leaves out.
+     */
+    fun exportPackage(folder: Uri, out: java.io.OutputStream) {
+        java.util.zip.ZipOutputStream(out.buffered()).use { zip ->
+            for (file in allFiles(folder)) {
+                val parts = file.path.split('/')
+                if (parts.any { part -> EXCLUDED_FOLDERS.any { it.equals(part, true) } } || file.name.endsWith(".csproj", true)) continue
+                zip.putNextEntry(java.util.zip.ZipEntry(file.path).apply { time = 0L })
+                resolver.openInputStream(file.uri)?.use { it.copyTo(zip) } ?: error("Cannot read \"${file.path}\"")
+                zip.closeEntry()
+            }
+        }
     }
 
     fun createFolder(parent: Uri, name: String): Uri {
@@ -153,22 +222,21 @@ class Workspace(private val context: Context, val tree: Uri) {
         return name
     }
 
-    enum class Language(val extension: String) { JAVASCRIPT("js"), CSHARP("cs") }
-
-    /** What the new mod screen fills in. The description, license etc. the modder creates later, as files. */
+    /** What the new project screen fills in. The description, license etc. the modder creates later, as files. */
     data class NewMod(
         val id: String,
         val name: String,
         val author: String,
         val version: String,
         val uid: String,
-        val language: Language,
+        val kind: Kind,
         val icon: Uri?,
     )
 
     /**
-     * A new mod, in the format Bunny Loader's packager accepts: manifest.json,
-     * content/<entry> and, with a picture, icon.png. Returns the folder.
+     * A new project, in Bunny Loader's format 3. A mod: manifest.json, the Mod class in `<id>.cs` at
+     * the root, Assets/, Common/, Content/ and Localization/. A pack: manifest.json and Images/ or
+     * Fonts/. With a picture, icon.png. Returns the folder.
      */
     fun createProject(mod: NewMod): String {
         check(ID.matches(mod.id)) { "Invalid ID" }
@@ -180,8 +248,11 @@ class Workspace(private val context: Context, val tree: Uri) {
         val folder = Docs.createDocument(resolver, root, Docs.Document.MIME_TYPE_DIR, mod.id)
             ?: error("Cannot create the project folder")
         try {
-            val className = if (mod.language == Language.JAVASCRIPT && mod.id in JS_RESERVED) "${mod.id}Mod" else mod.id
-            val entry = "$className.${mod.language.extension}".takeIf { mod.language == Language.CSHARP } ?: "main.js"
+            val type = when (mod.kind) {
+                Kind.MOD -> "mod"
+                Kind.TEXTURE -> "texture"
+                Kind.FONT -> "font"
+            }
             val manifest = buildString {
                 append("{\n")
                 append("  \"uid\": ${quote(mod.uid)},\n")
@@ -189,19 +260,24 @@ class Workspace(private val context: Context, val tree: Uri) {
                 append("  \"name\": ${quote(mod.name.trim())},\n")
                 append("  \"version\": ${quote(mod.version.trim())},\n")
                 append("  \"author\": ${quote(mod.author.trim())},\n")
-                append("  \"type\": \"mod\",\n")
-                append("  \"blVersion\": 2,\n")
-                append("  \"entry\": ${quote(entry)}\n")
+                append("  \"type\": ${quote(type)},\n")
+                append("  \"blVersion\": $BL_VERSION\n")
                 append("}\n")
             }
             writeText(createFile(folder, MANIFEST), manifest)
-            val content = createFolder(folder, "content")
-            val code = when (mod.language) {
-                Language.JAVASCRIPT -> "export default class $className extends Mod {\n    Load() {\n    }\n}\n"
-                Language.CSHARP -> "using BunnyLoader;\n\npublic class $className : Mod\n{\n" +
-                    "    public override void Load()\n    {\n    }\n}\n"
+            when (mod.kind) {
+                Kind.MOD -> {
+                    listOf("Assets", "Common", "Content", "Localization").forEach { createFolder(folder, it) }
+                    val keyword = mod.id in CSHARP_KEYWORDS
+                    val namespace = if (keyword) "@${mod.id}" else mod.id
+                    val className = if (keyword) "${mod.id}Mod" else mod.id
+                    val code = "using Terraria.ModLoader;\n\nnamespace $namespace;\n\npublic class $className : Mod\n{\n}\n"
+                    writeText(createFile(folder, "${mod.id}.cs"), code)
+                    writeText(createFile(folder, "description.md"), "# ${mod.name.trim()}\n")
+                }
+                Kind.TEXTURE -> createFolder(folder, "Images")
+                Kind.FONT -> createFolder(folder, "Fonts")
             }
-            writeText(createFile(content, entry), code)
             mod.icon?.let { writeIcon(folder, it) }
         } catch (e: Exception) {
             runCatching { Docs.deleteDocument(resolver, folder) }
@@ -235,6 +311,8 @@ class Workspace(private val context: Context, val tree: Uri) {
 
     companion object {
         const val MANIFEST = "manifest.json"
+        const val BL_VERSION = 3
+        private val EXCLUDED_FOLDERS = listOf("build", "bin", "obj")
         private const val MAX_TEXT_BYTES = 2 * 1024 * 1024
         val ID = Regex("^[A-Za-z][A-Za-z0-9_]{0,63}$")
         val UID = Regex("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
@@ -247,12 +325,15 @@ class Workspace(private val context: Context, val tree: Uri) {
             val joined = words.joinToString("") { it.replaceFirstChar(Char::uppercaseChar) }
             return joined.dropWhile { !it.isLetter() }.take(64)
         }
-        private val JS_RESERVED = setOf(
-            "await", "break", "case", "catch", "class", "const", "continue", "debugger", "default",
-            "delete", "do", "else", "enum", "export", "extends", "false", "finally", "for", "function",
-            "if", "implements", "import", "in", "instanceof", "interface", "let", "new", "null",
-            "package", "private", "protected", "public", "return", "static", "super", "switch",
-            "this", "throw", "true", "try", "typeof", "var", "void", "while", "with", "yield",
+        private val CSHARP_KEYWORDS = setOf(
+            "abstract", "as", "base", "bool", "break", "byte", "case", "catch", "char", "checked", "class",
+            "const", "continue", "decimal", "default", "delegate", "do", "double", "else", "enum", "event",
+            "explicit", "extern", "false", "finally", "fixed", "float", "for", "foreach", "goto", "if",
+            "implicit", "in", "int", "interface", "internal", "is", "lock", "long", "namespace", "new", "null",
+            "object", "operator", "out", "override", "params", "private", "protected", "public", "readonly",
+            "ref", "return", "sbyte", "sealed", "short", "sizeof", "stackalloc", "static", "string", "struct",
+            "switch", "this", "throw", "true", "try", "typeof", "uint", "ulong", "unchecked", "unsafe", "ushort",
+            "using", "virtual", "void", "volatile", "while",
         )
 
         fun quote(value: String): String = buildString {
