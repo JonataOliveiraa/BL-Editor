@@ -193,4 +193,19 @@
     <string name="FontGenerate">สร้างฟอนต์</string>
     <string name="FontGenerating">กำลังสร้าง %1$s…</string>
     <string name="FontsGenerated">สร้างแล้ว %1$d ฟอนต์ %2$d อักขระ</string>
+    <string name="ErrReadFolder">อ่านโฟลเดอร์ไม่ได้</string>
+    <string name="ErrMissingManifest">ไม่พบ manifest.json</string>
+    <string name="ErrOpenFile">เปิดไฟล์ไม่ได้</string>
+    <string name="ErrWriteFile">เขียนไฟล์ไม่ได้</string>
+    <string name="ErrExists">มี \"%1$s\" อยู่แล้ว</string>
+    <string name="ErrCreate">สร้าง \"%1$s\" ไม่ได้</string>
+    <string name="ErrReadName">อ่าน \"%1$s\" ไม่ได้</string>
+    <string name="ErrRename">เปลี่ยนชื่อเป็น \"%1$s\" ไม่ได้</string>
+    <string name="ErrDelete">ลบไม่ได้</string>
+    <string name="ErrInvalidName">ชื่อไม่ถูกต้อง: \"%1$s\"</string>
+    <string name="ErrProjectFields">ตรวจสอบช่องข้อมูลของโปรเจกต์</string>
+    <string name="ErrNoAnswer">Bunny Loader ไม่ตอบสนอง</string>
+    <string name="ErrFontNoChars">ฟอนต์นี้ไม่มีอักขระในชุดที่เลือก</string>
+    <string name="ErrFontTooBig">ตัวอักษรของฟอนต์นี้ใหญ่เกินหน้าฟอนต์ของเกม ลองลดขนาด</string>
+    <string name="ErrImageTooBig">รูปภาพมีได้สูงสุด %1$d พิกเซลต่อด้าน</string>
 </resources>

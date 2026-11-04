@@ -67,7 +67,7 @@ object BunnyLoader {
      */
     fun install(context: Context, project: String): String? = try {
         val result = context.contentResolver.call(BRIDGE_PROVIDER, "install", project, null)
-        if (result?.getBoolean("ok") == true) null else result?.getString("error") ?: "No answer from Bunny Loader"
+        if (result?.getBoolean("ok") == true) null else result?.getString("error") ?: context.getString(R.string.ErrNoAnswer)
     } catch (_: IllegalArgumentException) {
         // Unknown provider: an old Bunny Loader, from before saving installed.
         context.getString(R.string.Outdated)

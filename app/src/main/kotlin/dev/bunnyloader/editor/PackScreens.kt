@@ -83,7 +83,7 @@ private class PackActions(
             try {
                 withContext(Dispatchers.IO) {
                     context.contentResolver.openOutputStream(target, "wt")?.use { workspace.exportPackage(project.folder.uri, it) }
-                        ?: error("Cannot write the package")
+                        ?: error(context.getString(R.string.ErrWriteFile))
                 }
                 onNotice(Notice(context.getString(R.string.PackExported), error = false))
             } catch (e: Exception) {
@@ -177,7 +177,7 @@ fun TexturePackScreen(workspace: Workspace, project: Workspace.Project, onBack: 
             load = when {
                 texture.imported != null -> ({
                     withContext(Dispatchers.IO) {
-                        context.contentResolver.openInputStream(texture.imported)?.use { it.readBytes() } ?: error("Cannot open the file")
+                        context.contentResolver.openInputStream(texture.imported)?.use { it.readBytes() } ?: error(context.getString(R.string.ErrOpenFile))
                     }
                 })
                 texture.existing != null -> ({ withContext(Dispatchers.IO) { workspace.readBytes(texture.existing) } })
@@ -406,7 +406,7 @@ fun FontPackScreen(workspace: Workspace, project: Workspace.Project, onBack: () 
                     val cache = File(context.cacheDir, "font-source").apply { mkdirs() }
                     val target = File(cache, "source.ttf")
                     context.contentResolver.openInputStream(uri)?.use { input -> target.outputStream().use { input.copyTo(it) } }
-                        ?: error("Cannot read the file")
+                        ?: error(context.getString(R.string.ErrOpenFile))
                     FontTables.codePoints(target.readBytes())
                     val display = context.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null)
                         ?.use { if (it.moveToFirst()) it.getString(0) else null }
@@ -439,7 +439,7 @@ fun FontPackScreen(workspace: Workspace, project: Workspace.Project, onBack: () 
             try {
                 val targets = FontBuilder.TARGETS.filter { it.name in selected }
                 val written = withContext(Dispatchers.Default) {
-                    FontBuilder.build(source, FontBuilder.Options(preset, targets, sizeFactor, stroke), progress = { working = it }) { name ->
+                    FontBuilder.build(context, source, FontBuilder.Options(preset, targets, sizeFactor, stroke), progress = { working = it }) { name ->
                         workspace.output(workspace.fileAt(project.folder.uri, "Fonts/$name"))
                     }
                 }

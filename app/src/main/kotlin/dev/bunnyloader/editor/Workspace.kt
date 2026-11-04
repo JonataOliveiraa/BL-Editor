@@ -61,7 +61,7 @@ class Workspace(private val context: Context, val tree: Uri) {
                     ))
                 }
             }
-        } ?: error("Cannot read folder")
+        } ?: error(context.getString(R.string.ErrReadFolder))
         return result.sortedWith(compareBy<Entry>({ !it.directory }, { it.name.lowercase() }))
     }
 
@@ -69,7 +69,7 @@ class Workspace(private val context: Context, val tree: Uri) {
         val files = runCatching { children(folder.uri, "") }.getOrDefault(emptyList())
         val icon = files.firstOrNull { it.name == "icon.png" && !it.directory }?.uri
         try {
-            val manifest = files.firstOrNull { it.name == MANIFEST && !it.directory } ?: error("Missing manifest.json")
+            val manifest = files.firstOrNull { it.name == MANIFEST && !it.directory } ?: error(context.getString(R.string.ErrMissingManifest))
             val json = JSONObject(readText(manifest.uri))
             Project(folder.copy(path = ""), json.optString("id"), json.optString("name").ifBlank { folder.name },
                 json.optString("version"), null, icon, Kind.of(json.optString("type")), authorOf(json))
@@ -121,29 +121,29 @@ class Workspace(private val context: Context, val tree: Uri) {
                 if (buffer.size() > MAX_TEXT_BYTES) throw TooLarge()
             }
             buffer.toByteArray()
-        } ?: error("Cannot open file")
+        } ?: error(context.getString(R.string.ErrOpenFile))
         if (bytes.take(8192).any { it == 0.toByte() }) throw Binary()
         return String(bytes, Charsets.UTF_8).removePrefix("﻿")
     }
 
     fun writeText(uri: Uri, text: String) {
         resolver.openOutputStream(uri, "wt")?.use { it.write(text.toByteArray(Charsets.UTF_8)) }
-            ?: error("Cannot write file")
+            ?: error(context.getString(R.string.ErrWriteFile))
     }
 
     fun readBytes(uri: Uri): ByteArray =
-        resolver.openInputStream(uri)?.use { it.readBytes() } ?: error("Cannot open file")
+        resolver.openInputStream(uri)?.use { it.readBytes() } ?: error(context.getString(R.string.ErrOpenFile))
 
     fun writeBytes(uri: Uri, bytes: ByteArray) {
-        resolver.openOutputStream(uri, "wt")?.use { it.write(bytes) } ?: error("Cannot write file")
+        resolver.openOutputStream(uri, "wt")?.use { it.write(bytes) } ?: error(context.getString(R.string.ErrWriteFile))
     }
 
-    fun output(uri: Uri): java.io.OutputStream = resolver.openOutputStream(uri, "wt") ?: error("Cannot write file")
+    fun output(uri: Uri): java.io.OutputStream = resolver.openOutputStream(uri, "wt") ?: error(context.getString(R.string.ErrWriteFile))
 
     fun createFile(parent: Uri, name: String): Uri {
         validateName(name)
-        check(children(parent).none { it.name.equals(name, true) }) { "\"$name\" already exists" }
-        return Docs.createDocument(resolver, parent, "text/plain", name) ?: error("Cannot create \"$name\"")
+        check(children(parent).none { it.name.equals(name, true) }) { context.getString(R.string.ErrExists, name) }
+        return Docs.createDocument(resolver, parent, "text/plain", name) ?: error(context.getString(R.string.ErrCreate, name))
     }
 
     /** The file at [path] under [base], creating what is missing; an existing one is reused. */
@@ -177,7 +177,7 @@ class Workspace(private val context: Context, val tree: Uri) {
                 val parts = file.path.split('/')
                 if (parts.any { part -> EXCLUDED_FOLDERS.any { it.equals(part, true) } } || file.name.endsWith(".csproj", true)) continue
                 zip.putNextEntry(java.util.zip.ZipEntry(file.path).apply { time = 0L })
-                resolver.openInputStream(file.uri)?.use { it.copyTo(zip) } ?: error("Cannot read \"${file.path}\"")
+                resolver.openInputStream(file.uri)?.use { it.copyTo(zip) } ?: error(context.getString(R.string.ErrReadName, file.path))
                 zip.closeEntry()
             }
         }
@@ -185,18 +185,18 @@ class Workspace(private val context: Context, val tree: Uri) {
 
     fun createFolder(parent: Uri, name: String): Uri {
         validateName(name)
-        check(children(parent).none { it.name.equals(name, true) }) { "\"$name\" already exists" }
+        check(children(parent).none { it.name.equals(name, true) }) { context.getString(R.string.ErrExists, name) }
         return Docs.createDocument(resolver, parent, Docs.Document.MIME_TYPE_DIR, name)
-            ?: error("Cannot create \"$name\"")
+            ?: error(context.getString(R.string.ErrCreate, name))
     }
 
     fun rename(uri: Uri, name: String): Uri {
         validateName(name)
-        return Docs.renameDocument(resolver, uri, name) ?: error("Cannot rename to \"$name\"")
+        return Docs.renameDocument(resolver, uri, name) ?: error(context.getString(R.string.ErrRename, name))
     }
 
     fun delete(uri: Uri) {
-        check(Docs.deleteDocument(resolver, uri)) { "Cannot delete" }
+        check(Docs.deleteDocument(resolver, uri)) { context.getString(R.string.ErrDelete) }
     }
 
     /** Copies an outside file (system picker) to [parent]; a repeated name gets " (2)". */
@@ -210,11 +210,11 @@ class Workspace(private val context: Context, val tree: Uri) {
         val name = generateSequence(1) { it + 1 }.map { if (it == 1) original else "$stem ($it)$extension" }
             .first { it.lowercase() !in taken }
         val target = Docs.createDocument(resolver, parent, "application/octet-stream", name)
-            ?: error("Cannot create \"$name\"")
+            ?: error(context.getString(R.string.ErrCreate, name))
         try {
             resolver.openInputStream(source)?.use { input ->
-                resolver.openOutputStream(target, "wt")?.use { input.copyTo(it) } ?: error("Cannot write \"$name\"")
-            } ?: error("Cannot read the selected file")
+                resolver.openOutputStream(target, "wt")?.use { input.copyTo(it) } ?: error(context.getString(R.string.ErrWriteFile))
+            } ?: error(context.getString(R.string.ErrOpenFile))
         } catch (e: Exception) {
             runCatching { Docs.deleteDocument(resolver, target) }
             throw e
@@ -239,14 +239,14 @@ class Workspace(private val context: Context, val tree: Uri) {
      * Fonts/. With a picture, icon.png. Returns the folder.
      */
     fun createProject(mod: NewMod): String {
-        check(ID.matches(mod.id)) { "Invalid ID" }
-        check(mod.name.isNotBlank()) { "Name is empty" }
-        check(mod.author.isNotBlank()) { "Author is empty" }
-        check(UID.matches(mod.uid)) { "Invalid UID" }
-        check(mod.version.isNotBlank()) { "Version is empty" }
-        check(children(root).none { it.name.equals(mod.id, true) }) { "A project named \"${mod.id}\" already exists" }
+        check(ID.matches(mod.id)) { context.getString(R.string.InvalidId) }
+        check(mod.name.isNotBlank()) { context.getString(R.string.ErrProjectFields) }
+        check(mod.author.isNotBlank()) { context.getString(R.string.ErrProjectFields) }
+        check(UID.matches(mod.uid)) { context.getString(R.string.ErrProjectFields) }
+        check(mod.version.isNotBlank()) { context.getString(R.string.ErrProjectFields) }
+        check(children(root).none { it.name.equals(mod.id, true) }) { context.getString(R.string.ErrExists, mod.id) }
         val folder = Docs.createDocument(resolver, root, Docs.Document.MIME_TYPE_DIR, mod.id)
-            ?: error("Cannot create the project folder")
+            ?: error(context.getString(R.string.ErrCreate, mod.id))
         try {
             val type = when (mod.kind) {
                 Kind.MOD -> "mod"
@@ -287,22 +287,22 @@ class Workspace(private val context: Context, val tree: Uri) {
 
     /** Copies the picture as icon.png; anything that is not a PNG is converted. */
     private fun writeIcon(folder: Uri, source: Uri) {
-        val bytes = resolver.openInputStream(source)?.use { it.readBytes() } ?: error("Cannot read the image")
+        val bytes = resolver.openInputStream(source)?.use { it.readBytes() } ?: error(context.getString(R.string.NotAnImage))
         val png = bytes.size > 8 && bytes[0] == 0x89.toByte() && bytes[1] == 'P'.code.toByte()
         val target = createFile(folder, "icon.png")
         resolver.openOutputStream(target, "wt")?.use { out ->
             if (png) out.write(bytes)
             else {
                 val bitmap = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
-                    ?: error("The selected file is not an image")
+                    ?: error(context.getString(R.string.NotAnImage))
                 bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out)
             }
-        } ?: error("Cannot write icon.png")
+        } ?: error(context.getString(R.string.ErrWriteFile))
     }
 
     private fun validateName(name: String) {
         check(name.isNotBlank() && name != "." && name != ".." && !name.startsWith('.') &&
-            name.none { it == '/' || it == '\\' || it == ':' || it.isISOControl() }) { "Invalid name: \"$name\"" }
+            name.none { it == '/' || it == '\\' || it == ':' || it.isISOControl() }) { context.getString(R.string.ErrInvalidName, name) }
     }
 
     class TooLarge : IllegalStateException("File is larger than 2 MB")

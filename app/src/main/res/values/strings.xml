@@ -194,4 +194,19 @@
     <string name="FontGenerate">Generate fonts</string>
     <string name="FontGenerating">Generating %1$s…</string>
     <string name="FontsGenerated">%1$d fonts generated, %2$d characters.</string>
+    <string name="ErrReadFolder">Cannot read the folder.</string>
+    <string name="ErrMissingManifest">manifest.json is missing.</string>
+    <string name="ErrOpenFile">Cannot open the file.</string>
+    <string name="ErrWriteFile">Cannot write the file.</string>
+    <string name="ErrExists">\"%1$s\" already exists.</string>
+    <string name="ErrCreate">Cannot create \"%1$s\".</string>
+    <string name="ErrReadName">Cannot read \"%1$s\".</string>
+    <string name="ErrRename">Cannot rename to \"%1$s\".</string>
+    <string name="ErrDelete">Cannot delete.</string>
+    <string name="ErrInvalidName">Invalid name: \"%1$s\".</string>
+    <string name="ErrProjectFields">Check the project\'s fields.</string>
+    <string name="ErrNoAnswer">No answer from Bunny Loader.</string>
+    <string name="ErrFontNoChars">No character of the selected set exists in this font.</string>
+    <string name="ErrFontTooBig">A letter of this font is too big for the game\'s font pages. Try a smaller size.</string>
+    <string name="ErrImageTooBig">Images can have up to %1$d pixels per side.</string>
 </resources>

@@ -1,5 +1,6 @@
 package dev.bunnyloader.editor
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -113,7 +114,7 @@ fun PixelEditorScreen(
         if (load != null) {
             try {
                 val bytes = load()
-                canvas = withContext(Dispatchers.Default) { decodePixels(bytes) } ?: error(context.getString(R.string.NotAnImage))
+                canvas = withContext(Dispatchers.Default) { decodePixels(context, bytes) } ?: error(context.getString(R.string.NotAnImage))
             } catch (e: Exception) {
                 notice = Notice(e.message ?: e.javaClass.simpleName)
                 canvas = PixelCanvas(blankWidth, blankHeight)
@@ -126,7 +127,7 @@ fun PixelEditorScreen(
         if (uri == null || target == null) return@rememberLauncherForActivityResult
         scope.launch {
             val picture = withContext(Dispatchers.IO) {
-                runCatching { context.contentResolver.openInputStream(uri)?.use { it.readBytes() }?.let(::decodePixels) }.getOrNull()
+                runCatching { context.contentResolver.openInputStream(uri)?.use { it.readBytes() }?.let { decodePixels(context, it) } }.getOrNull()
             }
             if (picture == null) notice = Notice(context.getString(R.string.NotAnImage))
             else {
@@ -237,13 +238,13 @@ fun PixelEditorScreen(
     }
 }
 
-fun decodePixels(bytes: ByteArray): PixelCanvas? {
+fun decodePixels(context: Context, bytes: ByteArray): PixelCanvas? {
     val options = BitmapFactory.Options().apply {
         inPremultiplied = false
         inPreferredConfig = Bitmap.Config.ARGB_8888
     }
     val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options) ?: return null
-    require(bitmap.width <= PixelCanvas.MAX_SIDE && bitmap.height <= PixelCanvas.MAX_SIDE) { "Images up to ${PixelCanvas.MAX_SIDE} pixels per side" }
+    require(bitmap.width <= PixelCanvas.MAX_SIDE && bitmap.height <= PixelCanvas.MAX_SIDE) { context.getString(R.string.ErrImageTooBig, PixelCanvas.MAX_SIDE) }
     val pixels = IntArray(bitmap.width * bitmap.height)
     bitmap.getPixels(pixels, 0, bitmap.width, 0, 0, bitmap.width, bitmap.height)
     val canvas = PixelCanvas(bitmap.width, bitmap.height, pixels)

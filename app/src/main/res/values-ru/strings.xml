@@ -193,4 +193,19 @@
     <string name="FontGenerate">Создать шрифты</string>
     <string name="FontGenerating">Создаётся %1$s…</string>
     <string name="FontsGenerated">Создано шрифтов: %1$d, символов: %2$d.</string>
+    <string name="ErrReadFolder">Не удалось прочитать папку.</string>
+    <string name="ErrMissingManifest">Нет файла manifest.json.</string>
+    <string name="ErrOpenFile">Не удалось открыть файл.</string>
+    <string name="ErrWriteFile">Не удалось записать файл.</string>
+    <string name="ErrExists">«%1$s» уже существует.</string>
+    <string name="ErrCreate">Не удалось создать «%1$s».</string>
+    <string name="ErrReadName">Не удалось прочитать «%1$s».</string>
+    <string name="ErrRename">Не удалось переименовать в «%1$s».</string>
+    <string name="ErrDelete">Не удалось удалить.</string>
+    <string name="ErrInvalidName">Недопустимое имя: «%1$s».</string>
+    <string name="ErrProjectFields">Проверьте поля проекта.</string>
+    <string name="ErrNoAnswer">Bunny Loader не отвечает.</string>
+    <string name="ErrFontNoChars">В этом шрифте нет символов из выбранного набора.</string>
+    <string name="ErrFontTooBig">Буква этого шрифта слишком велика для страниц шрифта игры. Попробуйте меньший размер.</string>
+    <string name="ErrImageTooBig">Изображения могут иметь до %1$d пикселей на сторону.</string>
 </resources>

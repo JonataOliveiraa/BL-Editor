@@ -1,5 +1,6 @@
 package dev.bunnyloader.editor
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -63,6 +64,7 @@ object FontBuilder {
 
     /** [write] opens the file with that name in the pack's Fonts folder. [progress] gets the font being made. */
     fun build(
+        context: Context,
         fontFile: File,
         options: Options,
         name: String? = null,
@@ -70,10 +72,15 @@ object FontBuilder {
         write: (String) -> OutputStream,
     ): List<Written> {
         val bytes = fontFile.readBytes()
-        val codes = FontTables.codePoints(bytes)
+        val available = try {
+            FontTables.codePoints(bytes)
+        } catch (_: RuntimeException) {
+            throw IllegalArgumentException(context.getString(R.string.NotAFont))
+        }
+        val codes = available
             .filter { it in 0x20 until 0xFFFF && inRanges(it, parseRanges(options.preset.ranges)) }
             .sorted()
-        require(codes.isNotEmpty()) { "No character of the selected set exists in this font" }
+        require(codes.isNotEmpty()) { context.getString(R.string.ErrFontNoChars) }
         val typeface = Typeface.createFromFile(fontFile)
         val reference = Paint().apply { this.typeface = typeface; textSize = 1000f }
         val bounds = Rect()
@@ -81,7 +88,11 @@ object FontBuilder {
         val capRatio = (-bounds.top / 1000f).takeIf { it > 0f } ?: 0.7f
         return options.targets.map { target ->
             progress(target.name)
-            buildOne(typeface, codes, capRatio, target, options, name ?: target.name, write)
+            try {
+                buildOne(typeface, codes, capRatio, target, options, name ?: target.name, write)
+            } catch (_: GlyphTooBig) {
+                throw IllegalArgumentException(context.getString(R.string.ErrFontTooBig))
+            }
         }
     }
 
@@ -199,6 +210,8 @@ object FontBuilder {
     private fun inRanges(code: Int, ranges: List<IntRange>) = ranges.isEmpty() || ranges.any { code in it }
 }
 
+class GlyphTooBig : IllegalArgumentException("A glyph does not fit a font page")
+
 /** Shelves in a page, with positions on multiples of [step]: a logical pixel must land on whole atlas pixels. */
 class FontPacker(maxPage: Int, private val step: Int, val padding: Int) {
     val side = maxPage / step * step
@@ -212,7 +225,7 @@ class FontPacker(maxPage: Int, private val step: Int, val padding: Int) {
 
     /** Returns page, x, y. */
     fun place(width: Int, height: Int): IntArray {
-        require(width + 2 * padding <= side && height + 2 * padding <= side) { "A glyph of ${width}x$height does not fit a $side page" }
+        if (width + 2 * padding > side || height + 2 * padding > side) throw GlyphTooBig()
         if (x + width + padding > side) {
             x = padding
             y = align(y + shelf + padding)

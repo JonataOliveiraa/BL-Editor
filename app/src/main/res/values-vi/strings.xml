@@ -193,4 +193,19 @@
     <string name="FontGenerate">Tạo phông chữ</string>
     <string name="FontGenerating">Đang tạo %1$s…</string>
     <string name="FontsGenerated">Đã tạo %1$d phông chữ, %2$d ký tự.</string>
+    <string name="ErrReadFolder">Không thể đọc thư mục.</string>
+    <string name="ErrMissingManifest">Thiếu manifest.json.</string>
+    <string name="ErrOpenFile">Không thể mở tệp.</string>
+    <string name="ErrWriteFile">Không thể ghi tệp.</string>
+    <string name="ErrExists">\"%1$s\" đã tồn tại.</string>
+    <string name="ErrCreate">Không thể tạo \"%1$s\".</string>
+    <string name="ErrReadName">Không thể đọc \"%1$s\".</string>
+    <string name="ErrRename">Không thể đổi tên thành \"%1$s\".</string>
+    <string name="ErrDelete">Không thể xóa.</string>
+    <string name="ErrInvalidName">Tên không hợp lệ: \"%1$s\".</string>
+    <string name="ErrProjectFields">Hãy kiểm tra các trường của dự án.</string>
+    <string name="ErrNoAnswer">Bunny Loader không phản hồi.</string>
+    <string name="ErrFontNoChars">Phông này không có ký tự nào trong bộ đã chọn.</string>
+    <string name="ErrFontTooBig">Một chữ của phông này quá lớn so với trang phông của trò chơi. Hãy thử cỡ nhỏ hơn.</string>
+    <string name="ErrImageTooBig">Hình ảnh có thể tối đa %1$d pixel mỗi cạnh.</string>
 </resources>

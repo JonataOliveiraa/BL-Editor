@@ -193,4 +193,19 @@
     <string name="FontGenerate">Gerar fontes</string>
     <string name="FontGenerating">Gerando %1$s…</string>
     <string name="FontsGenerated">%1$d fontes geradas, %2$d caracteres.</string>
+    <string name="ErrReadFolder">Não foi possível ler a pasta.</string>
+    <string name="ErrMissingManifest">Falta o manifest.json.</string>
+    <string name="ErrOpenFile">Não foi possível abrir o arquivo.</string>
+    <string name="ErrWriteFile">Não foi possível gravar o arquivo.</string>
+    <string name="ErrExists">\"%1$s\" já existe.</string>
+    <string name="ErrCreate">Não foi possível criar \"%1$s\".</string>
+    <string name="ErrReadName">Não foi possível ler \"%1$s\".</string>
+    <string name="ErrRename">Não foi possível renomear para \"%1$s\".</string>
+    <string name="ErrDelete">Não foi possível excluir.</string>
+    <string name="ErrInvalidName">Nome inválido: \"%1$s\".</string>
+    <string name="ErrProjectFields">Confira os campos do projeto.</string>
+    <string name="ErrNoAnswer">O Bunny Loader não respondeu.</string>
+    <string name="ErrFontNoChars">Nenhum caractere do conjunto escolhido existe nesta fonte.</string>
+    <string name="ErrFontTooBig">Uma letra desta fonte é grande demais para as páginas de fonte do jogo. Tente um tamanho menor.</string>
+    <string name="ErrImageTooBig">As imagens podem ter até %1$d pixels por lado.</string>
 </resources>

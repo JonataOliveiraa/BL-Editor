@@ -118,6 +118,26 @@ class EditorLogicTest {
         assertNull(TexturePaths.clean(" "))
     }
 
+    /** Every text exists in every language, with the same placeholders. */
+    @Test fun everyLanguageHasEveryText() {
+        val entry = Regex("<string name=\"(\\w+)\"( translatable=\"false\")?>(.*?)</string>", RegexOption.DOT_MATCHES_ALL)
+        fun read(folder: File) = entry.findAll(File(folder, "strings.xml").readText())
+            .filter { it.groupValues[2].isEmpty() }.associate { it.groupValues[1] to it.groupValues[3] }
+        val res = File("src/main/res")
+        val base = read(File(res, "values"))
+        val languages = res.listFiles()!!.filter { it.name.startsWith("values-") && File(it, "strings.xml").isFile }
+        assertEquals(6, languages.size)
+        val placeholder = Regex("%\\d\\$[sd]")
+        for (language in languages) {
+            val texts = read(language)
+            assertEquals(language.name, base.keys, texts.keys)
+            for ((key, value) in base) {
+                assertEquals("${language.name}/$key", placeholder.findAll(value).map { it.value }.toSet(),
+                    placeholder.findAll(texts.getValue(key)).map { it.value }.toSet())
+            }
+        }
+    }
+
     /** Writes every template to a folder; tools/check-templates compiles them against BunnyLoader.dll. */
     @Test fun templatesAreWrittenForTheCompiler() {
         val folder = File("build/templates-check").apply { deleteRecursively(); mkdirs() }

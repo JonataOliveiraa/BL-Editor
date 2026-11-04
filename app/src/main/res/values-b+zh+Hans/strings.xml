@@ -193,4 +193,19 @@
     <string name="FontGenerate">生成字体</string>
     <string name="FontGenerating">正在生成 %1$s…</string>
     <string name="FontsGenerated">已生成 %1$d 个字体，%2$d 个字符。</string>
+    <string name="ErrReadFolder">无法读取文件夹。</string>
+    <string name="ErrMissingManifest">缺少 manifest.json。</string>
+    <string name="ErrOpenFile">无法打开文件。</string>
+    <string name="ErrWriteFile">无法写入文件。</string>
+    <string name="ErrExists">“%1$s”已存在。</string>
+    <string name="ErrCreate">无法创建“%1$s”。</string>
+    <string name="ErrReadName">无法读取“%1$s”。</string>
+    <string name="ErrRename">无法重命名为“%1$s”。</string>
+    <string name="ErrDelete">无法删除。</string>
+    <string name="ErrInvalidName">名称无效：“%1$s”。</string>
+    <string name="ErrProjectFields">请检查项目字段。</string>
+    <string name="ErrNoAnswer">Bunny Loader 没有响应。</string>
+    <string name="ErrFontNoChars">此字体不包含所选字符集中的任何字符。</string>
+    <string name="ErrFontTooBig">此字体的某个字母对游戏字体页来说太大。请尝试更小的尺寸。</string>
+    <string name="ErrImageTooBig">图片每边最多 %1$d 像素。</string>
 </resources>

@@ -193,4 +193,19 @@
     <string name="FontGenerate">Generar fuentes</string>
     <string name="FontGenerating">Generando %1$s…</string>
     <string name="FontsGenerated">%1$d fuentes generadas, %2$d caracteres.</string>
+    <string name="ErrReadFolder">No se puede leer la carpeta.</string>
+    <string name="ErrMissingManifest">Falta manifest.json.</string>
+    <string name="ErrOpenFile">No se puede abrir el archivo.</string>
+    <string name="ErrWriteFile">No se puede escribir el archivo.</string>
+    <string name="ErrExists">\"%1$s\" ya existe.</string>
+    <string name="ErrCreate">No se puede crear \"%1$s\".</string>
+    <string name="ErrReadName">No se puede leer \"%1$s\".</string>
+    <string name="ErrRename">No se puede renombrar a \"%1$s\".</string>
+    <string name="ErrDelete">No se puede eliminar.</string>
+    <string name="ErrInvalidName">Nombre no válido: \"%1$s\".</string>
+    <string name="ErrProjectFields">Revisa los campos del proyecto.</string>
+    <string name="ErrNoAnswer">Bunny Loader no respondió.</string>
+    <string name="ErrFontNoChars">Ningún carácter del conjunto elegido existe en esta fuente.</string>
+    <string name="ErrFontTooBig">Una letra de esta fuente es demasiado grande para las páginas de fuentes del juego. Prueba un tamaño menor.</string>
+    <string name="ErrImageTooBig">Las imágenes pueden tener hasta %1$d píxeles por lado.</string>
 </resources>
