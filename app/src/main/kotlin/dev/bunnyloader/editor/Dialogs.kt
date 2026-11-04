@@ -1,5 +1,6 @@
 package dev.bunnyloader.editor
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -21,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.stringResource
@@ -31,6 +33,59 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+
+/**
+ * A new file: its name and, for code, what it starts as. Without a template, a `.cs` file still
+ * starts with its namespace and an empty class.
+ */
+@Composable
+fun NewFileDialog(templates: Boolean, onDismiss: () -> Unit, onConfirm: (name: String, template: Templates.Template?) -> Unit) {
+    var name by remember { mutableStateOf("") }
+    var template by remember { mutableStateOf<Templates.Template?>(null) }
+    val focus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { focus.requestFocus() }
+    val typed = name.trim()
+    val final = when {
+        template == null -> typed
+        typed.endsWith(".cs", true) -> typed
+        '.' in typed -> ""
+        else -> "$typed.cs"
+    }
+    PixelDialog(stringResource(R.string.NewFile), onDismiss, buttons = {
+        PixelButton(stringResource(R.string.Cancel), onDismiss, fontSize = Ts.Body)
+        PixelButton(stringResource(R.string.Create), { onConfirm(final, template) }, fill = Bl.TitleFill, fontSize = Ts.Body, enabled = final.isNotEmpty())
+    }) {
+        BasicTextField(
+            name, { name = it },
+            Modifier.fillMaxWidth().pixelPanel(fill = Bl.Select, raised = false).padding(12.dp).focusRequester(focus),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done, autoCorrect = false),
+            keyboardActions = KeyboardActions(onDone = { if (final.isNotEmpty()) onConfirm(final, template) }),
+            textStyle = TextStyle(color = Bl.Text, fontSize = 16.sp, fontFamily = FontFamily.Monospace),
+            cursorBrush = SolidColor(Bl.PressedText),
+        )
+        if (templates) {
+            PixelText(stringResource(R.string.StartFrom), Ts.Small, Bl.TextFaint, Modifier.padding(top = 12.dp, bottom = 4.dp))
+            Column(Modifier.fillMaxWidth().heightIn(max = 280.dp).framePanel(fill = Bl.Code).verticalScroll(rememberScrollState()).padding(2.dp)) {
+                TemplateRow(stringResource(R.string.TplNone), stringResource(R.string.TplNoneHint), template == null) { template = null }
+                Templates.ALL.forEach { item ->
+                    TemplateRow(stringResource(item.title), stringResource(item.description), template === item) { template = item }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TemplateRow(title: String, hint: String, selected: Boolean, onClick: () -> Unit) {
+    Column(
+        Modifier.fillMaxWidth().background(if (selected) Bl.TitleFill else Color.Transparent)
+            .pixelClickable(PixelCorner.NONE, onClick = onClick).padding(horizontal = 10.dp, vertical = 6.dp),
+    ) {
+        PixelText(title, Ts.Body, if (selected) Bl.Text else Bl.TextDim, maxLines = 1)
+        PixelText(hint, Ts.Tiny, if (selected) Bl.TextDim else Bl.TextMuted)
+    }
+}
 
 /** Asks for a name (file, folder, rename). The current name comes selected up to the extension. */
 @Composable

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Compiles the file templates against the real API:
+      gradlew :app:testDebugUnitTest
+      dotnet build tools/check-templates -p:BunnyLoaderDll="<path to BunnyLoader.dll>"
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="../../app/build/templates-check/*.cs" />
+    <Reference Include="BunnyLoader" HintPath="$(BunnyLoaderDll)" />
+  </ItemGroup>
+
+</Project>
