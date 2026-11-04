@@ -180,7 +180,7 @@ private fun FileTypeIcon(entry: Workspace.Entry) {
     when {
         entry.directory -> PixelIcon(R.drawable.ic_folder, 16.dp)
         extension in setOf("js", "mjs", "cjs") -> PixelIcon(R.drawable.ic_js, 16.dp)
-        extension in setOf("png", "jpg", "jpeg", "gif", "webp") -> GlyphIcon(Glyph.IMAGE, 16.dp, color = Color(0xFF74C9A0), accent = Bl.PressedText)
+        extension in IMAGE_EXTENSIONS -> GlyphIcon(Glyph.IMAGE, 16.dp, color = Color(0xFF74C9A0), accent = Bl.PressedText)
         else -> GlyphIcon(Glyph.FILE, 16.dp, color = when (extension) {
             "cs" -> Color(0xFFB98BFF)
             "json", "hjson" -> Bl.Gold

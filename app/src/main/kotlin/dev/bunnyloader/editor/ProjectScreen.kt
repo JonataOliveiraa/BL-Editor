@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import dev.bunnyloader.editor.csharp.ProjectIndex
 import io.github.rosemoe.sora.text.Content
 import io.github.rosemoe.sora.widget.CodeEditor
 import io.github.rosemoe.sora.widget.EditorSearcher
@@ -63,7 +64,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.json.JSONObject
 
 private sealed interface ProjectDialog {
     data class NewFile(val parent: Uri, val parentPath: String) : ProjectDialog
@@ -106,6 +106,11 @@ fun ProjectScreen(workspace: Workspace, project: Workspace.Project, onClose: () 
     var importTarget by remember { mutableStateOf<Pair<Uri, String>?>(null) }
     var menu by remember { mutableStateOf(false) }
     var wide by remember { mutableStateOf(false) }
+    var painting by remember { mutableStateOf<OpenFile?>(null) }
+    var wordWrap by remember { mutableStateOf(EditorPrefs.wordWrap(context)) }
+    val isMod = project.kind == Workspace.Kind.MOD
+    val symbols = remember { ProjectIndex() }
+    val modId = project.id.ifEmpty { project.folder.name }
 
     val notText = stringResource(R.string.NotText)
     val tooLarge = stringResource(R.string.TooLarge)
@@ -124,6 +129,8 @@ fun ProjectScreen(workspace: Workspace, project: Workspace.Project, onClose: () 
     var installJob by remember { mutableStateOf<Job?>(null) }
     var installPending by remember { mutableStateOf(false) }
     fun requestInstall() {
+        // Bunny Loader's bridge installs mods; packs have their own Install and Export on their screen.
+        if (!isMod) return
         installPending = true
         if (installJob?.isActive == true) return
         installJob = scope.launch {
@@ -159,6 +166,13 @@ fun ProjectScreen(workspace: Workspace, project: Workspace.Project, onClose: () 
             closeDrawer()
             return
         }
+        if (isImageFile(entry.name)) {
+            val file = OpenFile(entry.path, entry.uri, Content(), image = true)
+            files.add(file)
+            current = file
+            closeDrawer()
+            return
+        }
         scope.launch {
             try {
                 val text = withContext(Dispatchers.IO) { workspace.readText(entry.uri) }
@@ -181,6 +195,7 @@ fun ProjectScreen(workspace: Workspace, project: Workspace.Project, onClose: () 
      * text with an empty one: only the Save button does that.
      */
     suspend fun save(file: OpenFile, manual: Boolean = true): Boolean {
+        if (file.image) return true
         val revision = file.revision
         val text = file.content.toString()
         if (!manual && text.isEmpty() && file.savedLength > 0) {
@@ -192,6 +207,7 @@ fun ProjectScreen(workspace: Workspace, project: Workspace.Project, onClose: () 
             Log.i(MainActivity.TAG, "Saved ${file.path}: ${file.savedLength} -> ${text.length} chars" +
                 if (manual) "" else " (autosave)")
             file.savedLength = text.length
+            if (file.name.endsWith(".cs", true)) withContext(Dispatchers.Default) { symbols.update(file.path, text) }
             if (file.revision == revision) file.dirty = false
             true
         } catch (e: Exception) {
@@ -298,16 +314,23 @@ fun ProjectScreen(workspace: Workspace, project: Workspace.Project, onClose: () 
         }
     }
 
-    // Opens the tree with content/ open and the manifest's entry file already in a tab.
+    // Everything the project declares, for completion across files.
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) {
+            runCatching {
+                workspace.allFiles(project.folder.uri).filter { it.name.endsWith(".cs", true) }.take(MAX_INDEXED_FILES).forEach { entry ->
+                    symbols.update(entry.path, workspace.readText(entry.uri))
+                }
+            }
+        }
+    }
+
+    // Opens the tree with Content/ open and the mod's main class already in a tab.
     LaunchedEffect(Unit) {
         try {
             tree.reload()
-            tree.children[""]?.firstOrNull { it.directory && it.name == "content" }?.let { tree.expand(it) }
-            val entry = withContext(Dispatchers.IO) {
-                val manifest = workspace.resolve(project.folder.uri, Workspace.MANIFEST) ?: return@withContext null
-                val name = JSONObject(workspace.readText(manifest.uri)).optString("entry", "main.js")
-                workspace.resolve(project.folder.uri, "content/$name")
-            }
+            tree.children[""]?.firstOrNull { it.directory && it.name == "Content" }?.let { tree.expand(it) }
+            val entry = if (!isMod) null else withContext(Dispatchers.IO) { workspace.resolve(project.folder.uri, "$modId.cs") }
             if (entry != null) {
                 selectedPath = entry.path
                 open(entry)
@@ -338,6 +361,7 @@ fun ProjectScreen(workspace: Workspace, project: Workspace.Project, onClose: () 
 
     BackHandler {
         when {
+            painting != null -> painting = null
             searching -> searching = false
             !wide && drawer.isOpen && current != null -> scope.launch { drawer.close() }
             else -> leave()
@@ -366,11 +390,23 @@ fun ProjectScreen(workspace: Workspace, project: Workspace.Project, onClose: () 
                         EditorPrefs.setAutosave(context, it)
                     },
                     testing = testing,
-                    onTest = ::test,
+                    onTest = if (isMod) ::test else null,
                     menuOpen = menu,
                     onMenu2 = { menu = it },
                     menuItems = listOf(
-                        MenuItem(stringResource(R.string.Find), enabled = current != null) { searching = true },
+                        MenuItem(stringResource(R.string.Find), enabled = editor != null) { searching = true },
+                        MenuItem(stringResource(R.string.FormatDocument), enabled = current?.name?.endsWith(".cs", true) == true && editor != null) {
+                            (editor as? BlCodeEditor)?.formatDocument()
+                        },
+                        MenuItem(stringResource(R.string.ToggleComment), enabled = current?.name?.endsWith(".cs", true) == true && editor != null) {
+                            (editor as? BlCodeEditor)?.toggleLineComment()
+                        },
+                        MenuItem(stringResource(R.string.DuplicateLine), enabled = editor != null) { editor?.duplicateLine() },
+                        MenuItem(stringResource(if (wordWrap) R.string.WordWrapOff else R.string.WordWrapOn)) {
+                            wordWrap = !wordWrap
+                            EditorPrefs.setWordWrap(context, wordWrap)
+                            editor?.setWordwrap(wordWrap)
+                        },
                         MenuItem(stringResource(R.string.SaveAll), enabled = files.any { it.dirty }) {
                             scope.launch { saveAll() }
                         },
@@ -385,8 +421,10 @@ fun ProjectScreen(workspace: Workspace, project: Workspace.Project, onClose: () 
                 val code = editor
                 if (searching && code != null && current != null) SearchBar(code) { searching = false }
                 val file = current
-                if (file != null) {
-                    CodePane(file, Modifier.weight(1f).fillMaxWidth()) { editor = it }
+                if (file != null && file.image) {
+                    ImageViewer(workspace, file, Modifier.weight(1f).fillMaxWidth()) { painting = file }
+                } else if (file != null) {
+                    CodePane(file, symbols, Modifier.weight(1f).fillMaxWidth()) { editor = it }
                 } else {
                     Box(Modifier.weight(1f).fillMaxWidth().background(Bl.Code), contentAlignment = Alignment.Center) {
                         PixelText(stringResource(R.string.NoFileOpen), Ts.Item, Bl.TextMuted)
@@ -433,13 +471,46 @@ fun ProjectScreen(workspace: Workspace, project: Workspace.Project, onClose: () 
         }
     }
 
+    painting?.let { file ->
+        PixelEditorScreen(
+            file.name,
+            load = { withContext(Dispatchers.IO) { workspace.readBytes(file.uri) } },
+            onSave = { bytes ->
+                withContext(Dispatchers.IO) { workspace.writeBytes(file.uri, bytes) }
+                file.revision++
+                requestInstall()
+            },
+            onClose = { painting = null },
+        )
+    }
+
     when (val shown = dialog) {
         null -> Unit
-        is ProjectDialog.NewFile -> NameDialog(stringResource(R.string.NewFile), "", stringResource(R.string.Create),
-            { dialog = null }) { name ->
+        is ProjectDialog.NewFile -> NewFileDialog(isMod, { dialog = null }) { name, template ->
             dialog = null
             operation {
-                val uri = withContext(Dispatchers.IO) { workspace.createFile(shown.parent, name) }
+                val uri = withContext(Dispatchers.IO) {
+                    val created = workspace.createFile(shown.parent, name)
+                    val stem = Templates.identifier(name.substringBeforeLast('.'))
+                    val namespace = Templates.namespaceFor(modId, shown.parentPath)
+                    if (template != null) {
+                        val output = template.build(namespace, stem, Templates.words(stem))
+                        workspace.writeText(created, output.code)
+                        symbols.update(if (shown.parentPath.isEmpty()) name else "${shown.parentPath}/$name", output.code)
+                        for (art in output.art) {
+                            val png = PlaceholderArt.png(art.width, art.height, art.argb)
+                            val picture = workspace.createFile(shown.parent, "$stem${art.suffix}.png")
+                            workspace.writeBytes(picture, png)
+                        }
+                        if (output.entries.isNotEmpty()) {
+                            val file = workspace.fileAt(project.folder.uri, "Localization/en-US_Mods.$modId.hjson")
+                            workspace.writeText(file, Templates.addLocalization(workspace.readText(file), output.entries))
+                        }
+                    } else if (name.endsWith(".cs", true) && isMod) {
+                        workspace.writeText(created, Templates.defaultClass(namespace, stem))
+                    }
+                    created
+                }
                 if (shown.parentPath.isNotEmpty() && shown.parentPath !in tree.expanded) tree.expanded.add(shown.parentPath)
                 val path = if (shown.parentPath.isEmpty()) name else "${shown.parentPath}/$name"
                 selectedPath = path
@@ -492,6 +563,8 @@ fun ProjectScreen(workspace: Workspace, project: Workspace.Project, onClose: () 
     }
 }
 
+private const val MAX_INDEXED_FILES = 600
+
 @Composable
 private fun ProjectHeader(
     title: String,
@@ -504,7 +577,7 @@ private fun ProjectHeader(
     autosave: Boolean,
     onAutosave: (Boolean) -> Unit,
     testing: Boolean,
-    onTest: () -> Unit,
+    onTest: (() -> Unit)?,
     menuOpen: Boolean,
     onMenu2: (Boolean) -> Unit,
     menuItems: List<MenuItem>,
@@ -531,7 +604,7 @@ private fun ProjectHeader(
                 accent = if (canSave) Bl.PressedText else Bl.TextMuted)
         }
         // The bunny: Test, as a highlighted button, like the launcher's Play.
-        Box(
+        if (onTest != null) Box(
             Modifier.padding(horizontal = 4.dp)
                 .pixelPanel(fill = if (testing) Bl.ButtonPressed else Bl.TitleFill)
                 .pixelClickable(enabled = !testing, onClick = onTest)
