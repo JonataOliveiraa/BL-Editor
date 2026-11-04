@@ -144,7 +144,7 @@ class CsAnalyzer(private val tree: ApiTree, private val project: ProjectIndex? =
             val result = ArrayList<Suggestion>()
             for (child in tree.childNamespaces(parent)) {
                 val score = match(child, prefix) ?: continue
-                result.add(Suggestion(child, Suggestion.Kind.NAMESPACE, "namespace", child, score))
+                result.add(Suggestion(child, Suggestion.Kind.NAMESPACE, "", child, score))
             }
             if (tokens.getOrNull(i - 1)?.isWord("static") == true || tokens.getOrNull(i)?.isWord("static") == true) for (type in tree.typesIn(parent)) {
                 val score = match(type.name, prefix) ?: continue
@@ -213,7 +213,7 @@ class CsAnalyzer(private val tree: ApiTree, private val project: ProjectIndex? =
                     val result = ArrayList<Suggestion>()
                     for (child in tree.childNamespaces(eval.name)) {
                         val score = match(child, prefix) ?: continue
-                        result.add(Suggestion(child, Suggestion.Kind.NAMESPACE, "namespace", child, score))
+                        result.add(Suggestion(child, Suggestion.Kind.NAMESPACE, "", child, score))
                     }
                     for (type in tree.typesIn(eval.name)) {
                         val score = match(type.name, prefix) ?: continue
@@ -277,10 +277,8 @@ class CsAnalyzer(private val tree: ApiTree, private val project: ProjectIndex? =
                     val paramless = list.all { it.parameters.isEmpty() }
                     val needsGeneric = list.all { it.member.generics.isNotEmpty() && it.parameters.none { p -> it.member.generics.any { g -> p.contains(g) } } }
                     val insert = escape(name) + (if (needsGeneric) "<\$1>" else "") + (if (paramless) "()" + (if (needsGeneric) "\$0" else "") else if (needsGeneric) "(\$2)\$0" else "(\$0)")
-                    val overloads = if (list.size > 1) "  (+${list.size - 1})" else ""
-                    Suggestion(name, Suggestion.Kind.METHOD,
-                        "${shortText(m.type)} $name(${first.parameters.joinToString(", ") { shortParameter(it) }})$overloads",
-                        insert, score + bonus, snippet = true)
+                    val overloads = if (list.size > 1) " +${list.size - 1}" else ""
+                    Suggestion(name, Suggestion.Kind.METHOD, shortText(stripRef(m.type)) + overloads, insert, score + bonus, snippet = true)
                 }
                 ApiMember.CONSTANT -> Suggestion(name,
                     if (first.owner.isEnum) Suggestion.Kind.ENUM_MEMBER else Suggestion.Kind.CONSTANT,
@@ -293,8 +291,6 @@ class CsAnalyzer(private val tree: ApiTree, private val project: ProjectIndex? =
 
         private fun stripRef(text: String?) = text?.removePrefix("ref readonly ")?.removePrefix("ref ")
 
-        private fun shortParameter(parameter: String) = shortText(parameter)
-
         // ---------------------------- statements and declarations ------------
 
         private fun statementItems(): List<Suggestion> {
@@ -304,7 +300,7 @@ class CsAnalyzer(private val tree: ApiTree, private val project: ProjectIndex? =
                 if (!seen.add(local.name)) continue
                 val score = match(local.name, prefix) ?: continue
                 val type = localType(local)
-                result.add(Suggestion(local.name, Suggestion.Kind.LOCAL, type?.let { shortText(displayOf(it)) } ?: "local", local.name, score + BONUS_LOCAL))
+                result.add(Suggestion(local.name, Suggestion.Kind.LOCAL, type?.let { shortText(displayOf(it)) } ?: "", local.name, score + BONUS_LOCAL))
             }
             result.addAll(scopeMembers(seen))
             if (prefix.isNotEmpty()) {
@@ -315,7 +311,7 @@ class CsAnalyzer(private val tree: ApiTree, private val project: ProjectIndex? =
                     // `if` as a snippet already writes the keyword.
                     if (expansions.any { it.label == keyword }) continue
                     val score = match(keyword, prefix) ?: continue
-                    result.add(Suggestion(keyword, Suggestion.Kind.KEYWORD, "keyword", keyword, score + BONUS_KEYWORD))
+                    result.add(Suggestion(keyword, Suggestion.Kind.KEYWORD, "", keyword, score + BONUS_KEYWORD))
                 }
                 result.addAll(namespaceRoots())
             }
@@ -323,7 +319,7 @@ class CsAnalyzer(private val tree: ApiTree, private val project: ProjectIndex? =
         }
 
         private fun namespaceRoots(): List<Suggestion> = tree.rootNamespaces.mapNotNull { name ->
-            match(name, prefix)?.let { Suggestion(name, Suggestion.Kind.NAMESPACE, "namespace", name, it - 200) }
+            match(name, prefix)?.let { Suggestion(name, Suggestion.Kind.NAMESPACE, "", name, it - 200) }
         }
 
         private fun isStatementStart(): Boolean {
@@ -377,7 +373,7 @@ class CsAnalyzer(private val tree: ApiTree, private val project: ProjectIndex? =
             val result = ArrayList<Suggestion>()
             for (keyword in MEMBER_KEYWORDS) {
                 val score = match(keyword, prefix) ?: continue
-                result.add(Suggestion(keyword, Suggestion.Kind.KEYWORD, "keyword", keyword, score + BONUS_KEYWORD))
+                result.add(Suggestion(keyword, Suggestion.Kind.KEYWORD, "", keyword, score + BONUS_KEYWORD))
             }
             if (prefix.isNotEmpty()) {
                 result.addAll(typeItems())
@@ -391,7 +387,7 @@ class CsAnalyzer(private val tree: ApiTree, private val project: ProjectIndex? =
             val result = ArrayList<Suggestion>()
             for (keyword in NAMESPACE_KEYWORDS) {
                 val score = match(keyword, prefix) ?: continue
-                result.add(Suggestion(keyword, Suggestion.Kind.KEYWORD, "keyword", keyword, score + BONUS_KEYWORD))
+                result.add(Suggestion(keyword, Suggestion.Kind.KEYWORD, "", keyword, score + BONUS_KEYWORD))
             }
             if (prefix.isNotEmpty()) result.addAll(snippets(CsSnippets.FILE))
             return result
@@ -412,16 +408,11 @@ class CsAnalyzer(private val tree: ApiTree, private val project: ProjectIndex? =
                 "delegate" -> Suggestion.Kind.DELEGATE
                 else -> Suggestion.Kind.CLASS
             }
-            val detail = when {
-                type.outer != null -> type.outer.name
-                type.namespace.isEmpty() -> type.kind
-                else -> type.namespace
-            }
             val generic = if (type.generics.isEmpty()) "" else "<\$1>"
             val call = if (!construct) "" else if (generic.isEmpty()) "(\$0)" else "(\$2)\$0"
             val insert = escape(type.name) + generic + call
             return Suggestion(type.name + if (type.generics.isEmpty()) "" else type.generics.joinToString(",", "<", ">"),
-                kind, detail, insert, score, snippet = generic.isNotEmpty() || construct, usings = usings)
+                kind, "", insert, score, snippet = generic.isNotEmpty() || construct, usings = usings)
         }
 
         /** Types by name: imported ones first; the others come with their `using`. */
@@ -464,7 +455,8 @@ class CsAnalyzer(private val tree: ApiTree, private val project: ProjectIndex? =
                 if (type.namespace.startsWith("BunnyLoader.Interop") || type.name.startsWith("On_")) total -= 200
                 result.add(typeSuggestion(type, total, if (imported) emptyList() else listOf(type.namespace), construct))
             }
-            return result
+            // The list shows names only: of two types with one name, the one most likely wanted stays.
+            return result.sortedByDescending { it.score }.distinctBy { it.label }
         }
 
         /** After `Item.rare = `, the ID class that holds the values floats to the top. */
@@ -528,7 +520,7 @@ class CsAnalyzer(private val tree: ApiTree, private val project: ProjectIndex? =
                 } else m.name to " => \$0;"
                 val label = if (m.kind == ApiMember.METHOD) "${m.name}(${m.parameters.joinToString(", ") { shortText(it.substringBeforeLast(' ')) }})" else m.name
                 result.add(Suggestion(label, if (m.kind == ApiMember.METHOD) Suggestion.Kind.METHOD else Suggestion.Kind.PROPERTY,
-                    "$returns • ${f.owner.name}", escapeKeepingMarks("$access override $returns $head") + body, score,
+                    returns, escapeKeepingMarks("$access override $returns $head") + body, score,
                     snippet = true, usings = usings.toList(), replaceFrom = replaceFrom))
             }
             return result
@@ -1149,6 +1141,32 @@ class CsAnalyzer(private val tree: ApiTree, private val project: ProjectIndex? =
                 if (typed.length >= 3 && label.contains(typed, ignoreCase = true)) return 500 - label.length.coerceAtMost(99)
             }
             return null
+        }
+
+        /** Which letters of [label] answer what was typed, for the list to color them in. */
+        fun matchedLetters(label: String, typed: String): BooleanArray {
+            val mask = BooleanArray(label.length)
+            if (typed.isEmpty() || typed.length > label.length) return mask
+            val at = label.indexOf(typed, ignoreCase = true)
+            if (at == 0) {
+                mask.fill(true, 0, typed.length)
+                return mask
+            }
+            if (matchesHumps(label, typed)) {
+                var t = 0
+                for (i in label.indices) {
+                    if (t == typed.length) break
+                    val startsWord = i == 0 || label[i].isUpperCase() || label[i - 1] == '_'
+                    if (label[i].equals(typed[t], ignoreCase = true) && (startsWord || (t > 0 && mask[i - 1]))) {
+                        mask[i] = true
+                        t++
+                    }
+                }
+                if (t == typed.length) return mask
+                mask.fill(false)
+            }
+            if (at > 0) mask.fill(true, at, at + typed.length)
+            return mask
         }
 
         /** "MP" finds ModPlayer, "ModPl" too: each typed letter starts a word or continues the last. */

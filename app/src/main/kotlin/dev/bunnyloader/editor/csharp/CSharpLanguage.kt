@@ -8,7 +8,6 @@ import io.github.rosemoe.sora.lang.analysis.AnalyzeManager
 import io.github.rosemoe.sora.lang.completion.CompletionItem
 import io.github.rosemoe.sora.lang.completion.CompletionItemKind
 import io.github.rosemoe.sora.lang.completion.CompletionPublisher
-import io.github.rosemoe.sora.lang.completion.SimpleCompletionIconDrawer
 import io.github.rosemoe.sora.lang.completion.snippet.parser.CodeSnippetParser
 import io.github.rosemoe.sora.lang.format.Formatter
 import io.github.rosemoe.sora.lang.smartEnter.NewlineHandleResult
@@ -58,21 +57,25 @@ class CSharpLanguage(
 
     override fun requireAutoComplete(content: ContentReference, position: CharPosition, publisher: CompletionPublisher, extra: Bundle) {
         val tree = CSharpApi.tree(context) ?: return
-        val result = CsAnalyzer(tree, project).complete(content.reference.toString(), position.index) { publisher.checkCancelled() }
+        val text = content.reference.toString()
+        val result = CsAnalyzer(tree, project).complete(text, position.index) { publisher.checkCancelled() }
         if (result.items.isEmpty()) return
         publisher.setComparator { a, b -> (a as SuggestionItem).rank - (b as SuggestionItem).rank }
         publisher.setUpdateThreshold(Int.MAX_VALUE)
         val prefix = position.index - result.prefixStart
-        val items = result.items.mapIndexed { index, it -> SuggestionItem(it, index, prefix, result) as CompletionItem }
+        val typed = text.substring(result.prefixStart, position.index)
+        val items = result.items.mapIndexed { index, it -> SuggestionItem(it, index, prefix, typed, result) as CompletionItem }
         publisher.addItems(items)
         publisher.updateList(true)
     }
 }
 
-private class SuggestionItem(
+class SuggestionItem(
     private val suggestion: Suggestion,
     val rank: Int,
     prefix: Int,
+    /** What was typed, for the list to color in the name. */
+    val typed: String,
     private val result: CompletionResult,
 ) : CompletionItem(suggestion.label, suggestion.detail) {
     init {
@@ -95,7 +98,6 @@ private class SuggestionItem(
             Suggestion.Kind.SNIPPET -> CompletionItemKind.Snippet
         }
         kind(shown)
-        icon(SimpleCompletionIconDrawer.draw(shown))
     }
 
     override fun performCompletion(editor: CodeEditor, text: Content, position: CharPosition) {

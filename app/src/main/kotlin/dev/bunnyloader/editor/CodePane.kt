@@ -44,6 +44,7 @@ import dev.bunnyloader.editor.csharp.SignatureInfo
 import io.github.rosemoe.sora.event.ContentChangeEvent
 import io.github.rosemoe.sora.event.SelectionChangeEvent
 import io.github.rosemoe.sora.widget.SelectionMovement
+import io.github.rosemoe.sora.widget.component.EditorAutoCompletion
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -67,6 +68,7 @@ class OpenFile(path: String, uri: Uri, val content: Content, val image: Boolean 
 private val SYMBOLS = arrayOf("⇥", "{", "}", "(", ")", "[", "]", ";", ".", ",", "=", "\"", "'", "`",
     "<", ">", "+", "-", "*", "/", "!", "&", "|", ":", "?", "_", "$", "#", "\\")
 private const val SIGNATURE_DELAY_MS = 150L
+private const val COMPLETION_MAX_HEIGHT_DP = 212
 
 /**
  * Parameter info, above the keyboard: the call around the cursor with the current argument in
@@ -115,6 +117,11 @@ fun CodePane(file: OpenFile, project: ProjectIndex?, modifier: Modifier = Modifi
     val editor = remember {
         BlCodeEditor(context).apply {
             props.overScrollEnabled = true
+            getComponent(EditorAutoCompletion::class.java).apply {
+                setLayout(CompletionWindowLayout())
+                setAdapter(CompletionRowAdapter())
+                setMaxHeight((COMPLETION_MAX_HEIGHT_DP * resources.displayMetrics.density).toInt())
+            }
             typefaceText = Typeface.MONOSPACE
             typefaceLineNumber = Typeface.MONOSPACE
             runCatching { colorScheme = Highlighting.colorScheme() }

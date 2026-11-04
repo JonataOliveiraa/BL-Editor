@@ -146,6 +146,24 @@ class CsAnalyzerTest {
         assertEquals(listOf("Terraria.Utilities"), item.usings)
     }
 
+    @Test fun theListShowsNamesWithoutNamespaces() {
+        val items = complete(inMethod("BiomeLoa|")).items
+        val loader = items.first { it.label == "BiomeLoader" }
+        assertEquals("", loader.detail)
+        assertEquals(items.size, items.distinctBy { it.label }.size)
+        assertEquals("int", complete(inMethod("Item.dam|")).items.first().detail)
+    }
+
+    @Test fun typedLettersAreMarked() {
+        fun marked(label: String, typed: String) =
+            CsAnalyzer.matchedLetters(label, typed).withIndex().filter { it.value }.joinToString("") { label[it.index].toString() }
+        assertEquals("Dam", marked("Damage", "dam"))
+        assertEquals("MP", marked("ModPlayer", "MP"))
+        assertEquals("ModPl", marked("ModPlayer", "ModPl"))
+        assertEquals("Loader", marked("BiomeLoader", "Loader"))
+        assertEquals("", marked("Damage", "xyz"))
+    }
+
     @Test fun camelHumpsFindTypes() {
         assertTrue("ModPlayer" in labels(inMethod("MP|")))
     }
