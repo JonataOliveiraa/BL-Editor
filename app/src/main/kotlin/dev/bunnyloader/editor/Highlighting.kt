@@ -1,6 +1,8 @@
 package dev.bunnyloader.editor
 
 import android.content.Context
+import dev.bunnyloader.editor.csharp.CSharpLanguage
+import dev.bunnyloader.editor.csharp.ProjectIndex
 import io.github.rosemoe.sora.lang.EmptyLanguage
 import io.github.rosemoe.sora.lang.Language
 import io.github.rosemoe.sora.langs.textmate.TextMateColorScheme
@@ -48,6 +50,9 @@ object Highlighting {
         else -> null
     }
 
-    fun languageFor(name: String): Language =
-        scopeFor(name)?.let { TextMateLanguage.create(it, true) } ?: EmptyLanguage()
+    fun languageFor(name: String, context: Context, project: ProjectIndex?): Language {
+        val scope = scopeFor(name) ?: return EmptyLanguage()
+        if (scope == "source.cs") return CSharpLanguage(TextMateLanguage.create(scope, false), context, project)
+        return TextMateLanguage.create(scope, true)
+    }
 }

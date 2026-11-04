@@ -1840,7 +1840,7 @@
 			}
 		},
 		"await-statement": {
-			"begin": "(?<!\\.\\s*)\\b(await)\\b",
+			"begin": "(?<!\\.)\\b(await)\\b",
 			"beginCaptures": {
 				"1": {
 					"name": "keyword.operator.expression.await.cs"
@@ -4113,7 +4113,7 @@
 		},
 		"await-expression": {
 			"name": "keyword.operator.expression.await.cs",
-			"match": "(?<!\\.\\s*)\\b(await)\\b"
+			"match": "(?<!\\.)\\b(await)\\b"
 		},
 		"parenthesized-expression": {
 			"begin": "\\(",

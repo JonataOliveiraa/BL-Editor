@@ -36,8 +36,8 @@ android {
         applicationId = "com.bunnyloader.editor"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
     }
 
     signingConfigs {
@@ -71,6 +71,10 @@ android {
     buildFeatures {
         compose = true
     }
+    // The API tree is already gzipped; compressing it again would only slow down opening it.
+    androidResources {
+        noCompress += "blapi"
+    }
     packaging {
         resources.excludes += setOf("META-INF/DEPENDENCIES", "META-INF/LICENSE*", "META-INF/NOTICE*")
     }
@@ -95,4 +99,6 @@ dependencies {
     implementation("io.github.Rosemoe.sora-editor:language-textmate")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
+
+    testImplementation("junit:junit:4.13.2")
 }
