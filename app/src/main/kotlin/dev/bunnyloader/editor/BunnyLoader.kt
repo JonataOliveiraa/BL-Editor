@@ -62,7 +62,8 @@ object BunnyLoader {
     /**
      * Packages, installs and enables the project in Bunny Loader, without a screen:
      * "saving installs". Blocks; call it off the main thread. Null worked;
-     * otherwise, the error text.
+     * otherwise, the error text. Bunny Loader versions whose ModSources only takes mods answer with an
+     * error for packs; those go through [Workspace.exportPackage].
      */
     fun install(context: Context, project: String): String? = try {
         val result = context.contentResolver.call(BRIDGE_PROVIDER, "install", project, null)

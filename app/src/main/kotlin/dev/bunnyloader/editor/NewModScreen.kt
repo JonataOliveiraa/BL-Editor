@@ -42,7 +42,7 @@ import kotlinx.coroutines.withContext
  * in Bunny Loader on each save.
  */
 @Composable
-fun NewModScreen(workspace: Workspace, onBack: () -> Unit, onCreated: (Workspace.Project) -> Unit) {
+fun NewModScreen(workspace: Workspace, kind: Workspace.Kind, onBack: () -> Unit, onCreated: (Workspace.Project) -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var notice by rememberNotice()
@@ -52,7 +52,6 @@ fun NewModScreen(workspace: Workspace, onBack: () -> Unit, onCreated: (Workspace
     var author by remember { mutableStateOf(EditorPrefs.author(context)) }
     var version by remember { mutableStateOf("1.0.0") }
     var uid by remember { mutableStateOf(UUID.randomUUID().toString()) }
-    var language by remember { mutableStateOf(Workspace.Language.JAVASCRIPT) }
     var icon by remember { mutableStateOf<Uri?>(null) }
     var preview by remember { mutableStateOf<Bitmap?>(null) }
     var creating by remember { mutableStateOf(false) }
@@ -80,7 +79,7 @@ fun NewModScreen(workspace: Workspace, onBack: () -> Unit, onCreated: (Workspace
         creating = true
         scope.launch {
             try {
-                val mod = Workspace.NewMod(effectiveId, name.trim(), author.trim(), version.trim(), uid, language, icon)
+                val mod = Workspace.NewMod(effectiveId, name.trim(), author.trim(), version.trim(), uid, kind, icon)
                 withContext(Dispatchers.IO) { workspace.createProject(mod) }
                 EditorPrefs.setAuthor(context, author.trim())
                 val created = withContext(Dispatchers.IO) { workspace.projects() }.firstOrNull { it.folder.name == mod.id }
@@ -95,7 +94,12 @@ fun NewModScreen(workspace: Workspace, onBack: () -> Unit, onCreated: (Workspace
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
-            PixelHeader(stringResource(R.string.NewMod), navigation = {
+            val title = stringResource(when (kind) {
+                Workspace.Kind.MOD -> R.string.NewMod
+                Workspace.Kind.TEXTURE -> R.string.NewTexturePack
+                Workspace.Kind.FONT -> R.string.NewFontPack
+            })
+            PixelHeader(title, navigation = {
                 IconAction(stringResource(R.string.Back), onBack) { GlyphIcon(Glyph.BACK, 22.dp) }
             })
             BoxWithConstraints(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
@@ -131,16 +135,6 @@ fun NewModScreen(workspace: Workspace, onBack: () -> Unit, onCreated: (Workspace
                                 }
                             })
                         PixelText(stringResource(R.string.UidHint), Ts.Tiny, Bl.TextMuted)
-                        Column {
-                            PixelText(stringResource(R.string.Language), Ts.Small, Bl.TextFaint, Modifier.padding(bottom = 4.dp, start = 2.dp))
-                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                LanguageChoice("JavaScript", R.drawable.ic_js, language == Workspace.Language.JAVASCRIPT,
-                                    Modifier.weight(1f)) { language = Workspace.Language.JAVASCRIPT }
-                                LanguageChoice("C#", null, language == Workspace.Language.CSHARP, Modifier.weight(1f)) {
-                                    language = Workspace.Language.CSHARP
-                                }
-                            }
-                        }
                     }
                 }
                 Column(
@@ -166,14 +160,14 @@ fun NewModScreen(workspace: Workspace, onBack: () -> Unit, onCreated: (Workspace
                     }
                     Column(Modifier.widthIn(max = 880.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         PixelText(stringResource(R.string.Preview), Ts.Small, Bl.TextFaint, Modifier.padding(start = 2.dp))
-                        PreviewCard(preview, name, author, version, language)
+                        PreviewCard(preview, name, author, version, kind)
                     }
                     Row(Modifier.widthIn(max = 880.dp).fillMaxWidth().padding(bottom = 24.dp),
                         horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.End),
                         verticalAlignment = Alignment.CenterVertically) {
                         if (creating) Sunflower(30.dp)
                         PixelButton(stringResource(R.string.Cancel), onBack)
-                        PixelButton(stringResource(R.string.CreateMod), ::create, fill = Bl.TitleFill,
+                        PixelButton(stringResource(R.string.Create), ::create, fill = Bl.TitleFill,
                             glyph = Glyph.NEW_FOLDER, enabled = ready && !creating)
                     }
                 }
@@ -183,24 +177,9 @@ fun NewModScreen(workspace: Workspace, onBack: () -> Unit, onCreated: (Workspace
     }
 }
 
-@Composable
-private fun LanguageChoice(label: String, icon: Int?, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
-    Row(
-        modifier.pixelPanel(fill = if (selected) Bl.TitleFill else Bl.Button, raised = !selected,
-            outline = if (selected) Bl.PressedBorder else Bl.Outline)
-            .pixelClickable(onClick = onClick).padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center,
-    ) {
-        if (icon != null) PixelIcon(icon, 18.dp, Modifier.padding(end = 8.dp))
-        else GlyphIcon(Glyph.FILE, 18.dp, Modifier.padding(end = 8.dp), color = Bl.TextDim)
-        PixelText(label, Ts.Body, if (selected) Bl.Text else Bl.TextDim)
-    }
-}
-
 /** How the mod will look in the list: picture, name, author and version. */
 @Composable
-private fun PreviewCard(picture: Bitmap?, name: String, author: String, version: String, language: Workspace.Language) {
+private fun PreviewCard(picture: Bitmap?, name: String, author: String, version: String, kind: Workspace.Kind) {
     Row(
         Modifier.fillMaxWidth().pixelPanel(fill = Bl.Panel, corner = PixelCorner.LARGE).padding(10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -214,7 +193,11 @@ private fun PreviewCard(picture: Bitmap?, name: String, author: String, version:
                 .filter { it.isNotBlank() }.joinToString(" · "), Ts.Small, Bl.TextFaint, maxLines = 1)
         }
         Box(Modifier.pixelPanel(fill = Bl.TitleFill).padding(horizontal = 8.dp, vertical = 3.dp)) {
-            PixelText(if (language == Workspace.Language.CSHARP) "C#" else "JS", Ts.Small)
+            PixelText(when (kind) {
+                Workspace.Kind.MOD -> "C#"
+                Workspace.Kind.TEXTURE -> stringResource(R.string.BadgeTexture)
+                Workspace.Kind.FONT -> stringResource(R.string.BadgeFont)
+            }, Ts.Small)
         }
     }
 }

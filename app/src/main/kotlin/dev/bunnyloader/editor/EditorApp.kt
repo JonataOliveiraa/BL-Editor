@@ -36,8 +36,10 @@ import androidx.lifecycle.LifecycleEventObserver
 
 private sealed interface Screen {
     data object Projects : Screen
-    data object NewMod : Screen
+    data class New(val kind: Workspace.Kind) : Screen
     data class Project(val project: Workspace.Project) : Screen
+    /** A pack's own screen: it opens with the textures or fonts, and its files are a step away. */
+    data class Pack(val project: Workspace.Project) : Screen
 }
 
 @Composable
@@ -50,8 +52,8 @@ fun EditorApp() {
     when (val current = screen) {
         Screen.Projects -> ProjectsScreen(
             workspace,
-            onOpen = { screen = Screen.Project(it) },
-            onNewMod = { screen = Screen.NewMod },
+            onOpen = { screen = if (it.kind == Workspace.Kind.MOD) Screen.Project(it) else Screen.Pack(it) },
+            onNew = { screen = Screen.New(it) },
             onDisconnect = {
                 runCatching {
                     context.contentResolver.releasePersistableUriPermission(workspace.tree,
@@ -60,11 +62,23 @@ fun EditorApp() {
                 tree = null
             },
         )
-        Screen.NewMod -> {
+        is Screen.New -> {
             BackHandler { screen = Screen.Projects }
-            NewModScreen(workspace, onBack = { screen = Screen.Projects }, onCreated = { screen = Screen.Project(it) })
+            NewModScreen(workspace, current.kind, onBack = { screen = Screen.Projects }, onCreated = {
+                EditorPrefs.markOpened(context, it.folder.name)
+                screen = if (it.kind == Workspace.Kind.MOD) Screen.Project(it) else Screen.Pack(it)
+            })
         }
-        is Screen.Project -> ProjectScreen(workspace, current.project) { screen = Screen.Projects }
+        is Screen.Project -> ProjectScreen(workspace, current.project) {
+            screen = if (current.project.kind == Workspace.Kind.MOD) Screen.Projects else Screen.Pack(current.project)
+        }
+        is Screen.Pack -> {
+            BackHandler { screen = Screen.Projects }
+            val back = { screen = Screen.Projects }
+            val files = { screen = Screen.Project(current.project) }
+            if (current.project.kind == Workspace.Kind.FONT) FontPackScreen(workspace, current.project, back, files)
+            else TexturePackScreen(workspace, current.project, back, files)
+        }
     }
 }
 
