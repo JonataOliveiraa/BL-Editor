@@ -11,10 +11,10 @@
     <string name="Projects">โปรเจกต์</string>
     <string name="NoProjects">ยังไม่มีโปรเจกต์ สร้างโปรเจกต์เพื่อเริ่มต้น</string>
     <string name="NewMod">ม็อดใหม่</string>
-    <string name="FieldId">ID (ตัวอักษร ตัวเลข และ _)</string>
+    <string name="FieldId">ID (ตัวพิมพ์เล็ก ตัวเลข และ _)</string>
     <string name="FieldName">ชื่อ</string>
     <string name="FieldAuthor">ผู้สร้าง</string>
-    <string name="InvalidId">ขึ้นต้นด้วยตัวอักษร ตามด้วยตัวอักษร ตัวเลข หรือ _</string>
+    <string name="InvalidId">ขึ้นต้นด้วยตัวพิมพ์เล็ก ตามด้วยตัวพิมพ์เล็ก ตัวเลข หรือ _</string>
     <string name="Create">สร้าง</string>
     <string name="Cancel">ยกเลิก</string>
     <string name="Refresh">รีเฟรช</string>

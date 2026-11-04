@@ -11,10 +11,10 @@
     <string name="Projects">Dự án</string>
     <string name="NoProjects">Chưa có dự án nào. Hãy tạo một dự án để bắt đầu.</string>
     <string name="NewMod">Mod mới</string>
-    <string name="FieldId">ID (chữ, số và _)</string>
+    <string name="FieldId">ID (chữ thường, số và _)</string>
     <string name="FieldName">Tên</string>
     <string name="FieldAuthor">Tác giả</string>
-    <string name="InvalidId">Bắt đầu bằng chữ cái; sau đó là chữ, số hoặc _.</string>
+    <string name="InvalidId">Bắt đầu bằng chữ thường; sau đó là chữ thường, số hoặc _.</string>
     <string name="Create">Tạo</string>
     <string name="Cancel">Hủy</string>
     <string name="Refresh">Làm mới</string>

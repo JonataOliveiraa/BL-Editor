@@ -11,10 +11,10 @@
     <string name="Projects">项目</string>
     <string name="NoProjects">还没有项目。创建一个开始吧。</string>
     <string name="NewMod">新建模组</string>
-    <string name="FieldId">ID（字母、数字和 _）</string>
+    <string name="FieldId">ID（小写字母、数字和 _）</string>
     <string name="FieldName">名称</string>
     <string name="FieldAuthor">作者</string>
-    <string name="InvalidId">以字母开头，后面可用字母、数字或 _。</string>
+    <string name="InvalidId">以小写字母开头，后面可用小写字母、数字或 _。</string>
     <string name="Create">创建</string>
     <string name="Cancel">取消</string>
     <string name="Refresh">刷新</string>

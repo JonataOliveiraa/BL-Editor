@@ -49,7 +49,7 @@ fun NewModScreen(workspace: Workspace, kind: Workspace.Kind, onBack: () -> Unit,
     var name by remember { mutableStateOf("") }
     var id by remember { mutableStateOf("") }
     var idEdited by remember { mutableStateOf(false) }
-    var author by remember { mutableStateOf(EditorPrefs.author(context)) }
+    var author by remember { mutableStateOf("") }
     var version by remember { mutableStateOf("1.0.0") }
     var uid by remember { mutableStateOf(UUID.randomUUID().toString()) }
     var icon by remember { mutableStateOf<Uri?>(null) }
@@ -81,7 +81,6 @@ fun NewModScreen(workspace: Workspace, kind: Workspace.Kind, onBack: () -> Unit,
             try {
                 val mod = Workspace.NewMod(effectiveId, name.trim(), author.trim(), version.trim(), uid, kind, icon)
                 withContext(Dispatchers.IO) { workspace.createProject(mod) }
-                EditorPrefs.setAuthor(context, author.trim())
                 val created = withContext(Dispatchers.IO) { workspace.projects() }.firstOrNull { it.folder.name == mod.id }
                 if (created != null) onCreated(created) else onBack()
             } catch (e: Exception) {
@@ -120,7 +119,7 @@ fun NewModScreen(workspace: Workspace, kind: Workspace.Kind, onBack: () -> Unit,
                 val fields: @Composable () -> Unit = {
                     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                         PixelTextField(name, { name = it }, stringResource(R.string.FieldName), capitalize = true)
-                        PixelTextField(effectiveId, { id = it.trim(); idEdited = true }, stringResource(R.string.FieldId),
+                        PixelTextField(effectiveId, { id = it.trim().lowercase(); idEdited = true }, stringResource(R.string.FieldId),
                             error = idError)
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             PixelTextField(author, { author = it }, stringResource(R.string.FieldAuthor), Modifier.weight(2f),

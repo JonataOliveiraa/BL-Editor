@@ -111,8 +111,6 @@ object EditorPrefs {
     private fun prefs(context: android.content.Context) =
         context.getSharedPreferences("editor", android.content.Context.MODE_PRIVATE)
 
-    fun author(context: android.content.Context): String = prefs(context).getString("author", "").orEmpty()
-    fun setAuthor(context: android.content.Context, value: String) = prefs(context).edit().putString("author", value).apply()
     fun autosave(context: android.content.Context): Boolean = prefs(context).getBoolean("autosave", false)
     fun setAutosave(context: android.content.Context, value: Boolean) = prefs(context).edit().putBoolean("autosave", value).apply()
     fun wordWrap(context: android.content.Context): Boolean = prefs(context).getBoolean("wordWrap", false)

@@ -268,9 +268,8 @@ class Workspace(private val context: Context, val tree: Uri) {
             when (mod.kind) {
                 Kind.MOD -> {
                     listOf("Assets", "Common", "Content", "Localization").forEach { createFolder(folder, it) }
-                    val keyword = mod.id in CSHARP_KEYWORDS
-                    val namespace = if (keyword) "@${mod.id}" else mod.id
-                    val className = if (keyword) "${mod.id}Mod" else mod.id
+                    val namespace = namespaceOf(mod.id)
+                    val className = if (mod.id in CSHARP_KEYWORDS) "${mod.id}Mod" else mod.id
                     val code = "using Terraria.ModLoader;\n\nnamespace $namespace;\n\npublic class $className : Mod\n{\n}\n"
                     writeText(createFile(folder, "${mod.id}.cs"), code)
                     writeText(createFile(folder, "description.md"), "# ${mod.name.trim()}\n")
@@ -314,17 +313,23 @@ class Workspace(private val context: Context, val tree: Uri) {
         const val BL_VERSION = 3
         private val EXCLUDED_FOLDERS = listOf("build", "bin", "obj")
         private const val MAX_TEXT_BYTES = 2 * 1024 * 1024
-        val ID = Regex("^[A-Za-z][A-Za-z0-9_]{0,63}$")
+        /**
+         * Lowercase: what the Bunny Loader catalog accepts for publishing. Bunny Loader also needs it
+         * to be a C# name, since it names the `<id>.cs` file. Projects with other IDs still open.
+         */
+        val ID = Regex("^[a-z][a-z0-9_]{0,63}$")
         val UID = Regex("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 
-        /** "Fire Sword 2" becomes "FireSword2": the ID suggested from the name. */
+        /** "Fire Sword 2" becomes "firesword2": the ID suggested from the name. */
         fun idFromName(name: String): String {
             val plain = java.text.Normalizer.normalize(name, java.text.Normalizer.Form.NFD)
                 .replace(Regex("\\p{M}+"), "")
             val words = plain.split(Regex("[^A-Za-z0-9]+")).filter { it.isNotEmpty() }
-            val joined = words.joinToString("") { it.replaceFirstChar(Char::uppercaseChar) }
-            return joined.dropWhile { !it.isLetter() }.take(64)
+            return words.joinToString("").lowercase().dropWhile { !it.isLetter() }.take(64)
         }
+
+        /** The namespace for a mod ID: an ID can be a C# keyword (`event`), which `@` makes usable. */
+        fun namespaceOf(id: String): String = if (id in CSHARP_KEYWORDS) "@$id" else id
         private val CSHARP_KEYWORDS = setOf(
             "abstract", "as", "base", "bool", "break", "byte", "case", "catch", "char", "checked", "class",
             "const", "continue", "decimal", "default", "delegate", "do", "double", "else", "enum", "event",

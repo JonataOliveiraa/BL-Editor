@@ -12,10 +12,10 @@
     <string name="Projects">Projects</string>
     <string name="NoProjects">No projects yet. Create one to start.</string>
     <string name="NewMod">New mod</string>
-    <string name="FieldId">ID (letters, numbers and _)</string>
+    <string name="FieldId">ID (lowercase letters, numbers and _)</string>
     <string name="FieldName">Name</string>
     <string name="FieldAuthor">Author</string>
-    <string name="InvalidId">Start with a letter; then letters, numbers or _.</string>
+    <string name="InvalidId">Start with a lowercase letter; then lowercase letters, numbers or _.</string>
     <string name="Create">Create</string>
     <string name="Cancel">Cancel</string>
     <string name="Refresh">Refresh</string>

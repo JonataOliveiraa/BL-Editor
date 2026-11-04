@@ -83,6 +83,20 @@ class EditorLogicTest {
         assertEquals("My Fire Sword", Templates.words("MyFireSword"))
     }
 
+    @Test fun modIdsAreLowercase() {
+        assertEquals("firesword2", Workspace.idFromName("Fire Sword 2"))
+        assertEquals("espadadefogo", Workspace.idFromName("Espada de Fogo"))
+        assertEquals("sword", Workspace.idFromName("2 Sword"))
+        assertTrue(Workspace.ID.matches("firesword_2"))
+        assertFalse(Workspace.ID.matches("FireSword"))
+        assertFalse(Workspace.ID.matches("2sword"))
+    }
+
+    @Test fun aKeywordIdStillMakesANamespace() {
+        assertEquals("@event.Content", Templates.namespaceFor("event", "Content"))
+        assertEquals("sword.Content", Templates.namespaceFor("sword", "Content"))
+    }
+
     @Test fun localizationAddsWithoutTouchingWhatIsThere() {
         val first = Templates.addLocalization("", listOf(Templates.Entry("Items", "Rock", listOf("DisplayName" to "Rock", "Tooltip" to ""))))
         assertEquals("Items: {\n\tRock: {\n\t\tDisplayName: Rock\n\t\tTooltip: \"\"\n\t}\n}\n", first)

@@ -11,10 +11,10 @@
     <string name="Projects">Projetos</string>
     <string name="NoProjects">Nenhum projeto ainda. Crie um para começar.</string>
     <string name="NewMod">Novo mod</string>
-    <string name="FieldId">ID (letras, números e _)</string>
+    <string name="FieldId">ID (letras minúsculas, números e _)</string>
     <string name="FieldName">Nome</string>
     <string name="FieldAuthor">Autor</string>
-    <string name="InvalidId">Comece com uma letra; depois letras, números ou _.</string>
+    <string name="InvalidId">Comece com uma letra minúscula; depois minúsculas, números ou _.</string>
     <string name="Create">Criar</string>
     <string name="Cancel">Cancelar</string>
     <string name="Refresh">Atualizar</string>

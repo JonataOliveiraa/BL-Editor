@@ -11,10 +11,10 @@
     <string name="Projects">Проекты</string>
     <string name="NoProjects">Проектов пока нет. Создайте первый.</string>
     <string name="NewMod">Новый мод</string>
-    <string name="FieldId">ID (буквы, цифры и _)</string>
+    <string name="FieldId">ID (строчные буквы, цифры и _)</string>
     <string name="FieldName">Название</string>
     <string name="FieldAuthor">Автор</string>
-    <string name="InvalidId">Начните с буквы; дальше буквы, цифры или _.</string>
+    <string name="InvalidId">Начните со строчной буквы; дальше строчные буквы, цифры или _.</string>
     <string name="Create">Создать</string>
     <string name="Cancel">Отмена</string>
     <string name="Refresh">Обновить</string>

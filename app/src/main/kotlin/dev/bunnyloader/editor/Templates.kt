@@ -363,7 +363,7 @@ object Templates {
     /** Mod id + folders: `MyMod.Content.Items`. Whatever cannot be part of a namespace is dropped. */
     fun namespaceFor(modId: String, folder: String): String {
         val parts = folder.split('/').filter { it.isNotEmpty() }.map(::identifier).filter { it.isNotEmpty() }
-        return (listOf(modId) + parts).joinToString(".")
+        return (listOf(Workspace.namespaceOf(modId)) + parts).joinToString(".")
     }
 
     fun identifier(text: String): String {
