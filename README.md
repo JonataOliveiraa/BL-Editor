@@ -1,7 +1,7 @@
 # BL Editor
 
-A code editor for Android, made for [Bunny Loader](https://github.com/JonataOliveiraa/Bunny-Loader) mods, texture packs and
-font packs.
+A code editor for Android, made for [Bunny Loader](https://github.com/JonataOliveiraa/Bunny-Loader) C# mods, texture packs
+and font packs. C# is the only language for mods, as in Bunny Loader itself.
 
 - Looks like Bunny Loader: the launcher palette, bevelled pixel panels, the yellow touch border and Terraria's font
   on the frame (titles, buttons, forms). Code, the file tree and the tabs use regular fonts.
@@ -24,7 +24,7 @@ font packs.
 - **File templates**: Class, ModItem, sword, ModItem with projectile, ModProjectile, ModNPC, ModBuff, accessory, ModTile,
   ModPlayer, ModSystem, GlobalItem and GlobalNPC. The namespace comes from the folder, and the template also writes a
   placeholder PNG and the name in `Localization/`. A plain `.cs` file starts with its namespace and an empty class.
-- Syntax highlighting for C#, JavaScript, JSON and Markdown, tabs, find and replace, undo and redo, and a symbol bar above
+- Syntax highlighting for C# and for the data files of a mod (JSON, Hjson and Markdown), tabs, find and replace, undo and redo, and a symbol bar above
   the keyboard.
 - This is a fast reader, not a compiler: it does not report errors while typing. Compile errors come from Bunny Loader,
   next to the toggle and on Test.
@@ -33,7 +33,7 @@ font packs.
 
 - A compact file tree with indent guides. The buttons on top act on the selected folder; a long press on a row opens its
   menu: create file or folder, import from the device, rename, delete. On wide screens the tree stays open on the side.
-- **New mod**: picture (saved as `icon.png`), name, ID (suggested from the name), author, version and a generated UID. It
+- **New mod**: picture (saved as `icon.png`), name, lowercase ID (suggested from the name), author, version and a generated UID. It
   writes Bunny Loader's format 3: the Mod class in `<id>.cs`, `Assets/`, `Common/`, `Content/` and `Localization/`.
 - **Saving updates the mod in Bunny Loader**: every save packages, installs and enables it in the background. The check
   next to the toggle says it worked; a red `!` shows the error.

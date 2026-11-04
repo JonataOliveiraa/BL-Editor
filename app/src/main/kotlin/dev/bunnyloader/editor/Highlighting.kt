@@ -43,7 +43,6 @@ object Highlighting {
 
     /** The TextMate scope by file extension; null = plain text. */
     fun scopeFor(name: String): String? = when (name.substringAfterLast('.', "").lowercase()) {
-        "js", "mjs", "cjs" -> "source.js"
         "cs" -> "source.cs"
         "json", "hjson" -> "source.json"
         "md", "markdown" -> "text.html.markdown"

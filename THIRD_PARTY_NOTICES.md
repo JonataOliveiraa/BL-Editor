@@ -11,13 +11,13 @@ BL Editor includes the following third-party components.
 
 ## TextMate grammars from Visual Studio Code
 
-- Files: `app/src/main/assets/textmate/javascript`, `csharp`, `json` and `markdown`
+- Files: `app/src/main/assets/textmate/csharp`, `json` and `markdown`
 - Source: https://github.com/microsoft/vscode (tag 1.95.0, `extensions/*/syntaxes`)
 - License: MIT, Copyright (c) 2015 - present Microsoft Corporation. Full text in `VSCODE-LICENSE.txt`.
 - `csharp.tmLanguage.json` has one change: `(?<!\.\s*)` became `(?<!\.)`, because the regex engine here refuses a
   variable-length look-behind.
 - The grammars were themselves converted from upstream projects under MIT licenses
-  (microsoft/TypeScript-TmLanguage, dotnet/csharp-tmLanguage, microsoft/vscode-markdown-tm-grammar).
+  (dotnet/csharp-tmLanguage, microsoft/vscode-markdown-tm-grammar).
 
 ## Pixel art from Bunny Loader
 
