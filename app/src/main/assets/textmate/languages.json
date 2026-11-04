@@ -1,0 +1,33 @@
+{
+  "languages": [
+    {
+      "grammar": "textmate/javascript/JavaScript.tmLanguage.json",
+      "name": "javascript",
+      "scopeName": "source.js",
+      "languageConfiguration": "textmate/c-like-configuration.json"
+    },
+    {
+      "grammar": "textmate/csharp/csharp.tmLanguage.json",
+      "name": "csharp",
+      "scopeName": "source.cs",
+      "languageConfiguration": "textmate/c-like-configuration.json"
+    },
+    {
+      "grammar": "textmate/json/JSON.tmLanguage.json",
+      "name": "json",
+      "scopeName": "source.json",
+      "languageConfiguration": "textmate/json-configuration.json"
+    },
+    {
+      "grammar": "textmate/markdown/markdown.tmLanguage.json",
+      "name": "markdown",
+      "scopeName": "text.html.markdown",
+      "languageConfiguration": "textmate/markdown-configuration.json",
+      "embeddedLanguages": {
+        "source.js": "javascript",
+        "source.cs": "csharp",
+        "source.json": "json"
+      }
+    }
+  ]
+}

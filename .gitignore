@@ -1,0 +1,13 @@
+.gradle/
+.kotlin/
+build/
+local.properties
+keystore.properties
+*.keystore
+*.jks
+*.apk
+.idea/
+*.iml
+hs_err_pid*.log
+out/
+.claude/
