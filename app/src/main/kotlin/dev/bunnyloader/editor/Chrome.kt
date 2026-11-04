@@ -115,6 +115,15 @@ object EditorPrefs {
     fun setAuthor(context: android.content.Context, value: String) = prefs(context).edit().putString("author", value).apply()
     fun autosave(context: android.content.Context): Boolean = prefs(context).getBoolean("autosave", false)
     fun setAutosave(context: android.content.Context, value: Boolean) = prefs(context).edit().putBoolean("autosave", value).apply()
+    fun wordWrap(context: android.content.Context): Boolean = prefs(context).getBoolean("wordWrap", false)
+    fun setWordWrap(context: android.content.Context, value: Boolean) = prefs(context).edit().putBoolean("wordWrap", value).apply()
+    fun language(context: android.content.Context): String = prefs(context).getString("language", "").orEmpty()
+    fun setLanguage(context: android.content.Context, value: String) = prefs(context).edit().putString("language", value).commit()
+
+    /** When each project was last opened, so the home screen can put recent work first. */
+    fun lastOpened(context: android.content.Context, folder: String): Long = prefs(context).getLong("opened:$folder", 0L)
+    fun markOpened(context: android.content.Context, folder: String) =
+        prefs(context).edit().putLong("opened:$folder", System.currentTimeMillis()).apply()
 }
 
 @Composable
