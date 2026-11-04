@@ -11,3 +11,5 @@ keystore.properties
 hs_err_pid*.log
 out/
 .claude/
+tools/*/bin/
+tools/*/obj/
