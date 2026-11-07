@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="ExportDesktopProject">导出桌面工程（ZIP）</string>
+    <string name="DesktopProjectExported">桌面工程已导出，解压后可在电脑的 C# 编辑器中直接打开工程。</string>
     <string name="ConnectTitle">连接到 Bunny Loader</string>
     <string name="ConnectDescription">BL Editor 可编辑 Bunny Loader 的 ModSources 文件夹中的项目，并用你的更改打开游戏。无需 root。</string>
     <string name="Connect">连接</string>

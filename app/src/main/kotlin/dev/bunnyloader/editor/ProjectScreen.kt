@@ -1,5 +1,6 @@
 package dev.bunnyloader.editor
 
+import android.annotation.SuppressLint
 import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.BackHandler
@@ -86,6 +87,7 @@ private sealed interface Sync {
 private val SidebarBreakpoint = 840.dp
 private const val AUTOSAVE_DELAY_MS = 1500L
 
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun ProjectScreen(workspace: Workspace, project: Workspace.Project, onClose: () -> Unit) {
     val context = LocalContext.current
@@ -222,6 +224,22 @@ fun ProjectScreen(workspace: Workspace, project: Workspace.Project, onClose: () 
         val ok = dirty.all { save(it, manual) }
         if (ok && install && dirty.isNotEmpty()) requestInstall()
         return ok
+    }
+
+    val projectExporter = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { target ->
+        if (target != null) scope.launch {
+            try {
+                if (!saveAll(install = false)) return@launch
+                withContext(Dispatchers.IO) {
+                    context.contentResolver.openOutputStream(target, "wt")?.use {
+                        workspace.exportProject(project.folder.uri, it)
+                    } ?: error(context.getString(R.string.ErrWriteFile))
+                }
+                notice = Notice(context.getString(R.string.DesktopProjectExported), error = false)
+            } catch (e: Exception) {
+                report(e)
+            }
+        }
     }
 
     fun closeTab(file: OpenFile) {
@@ -412,6 +430,9 @@ fun ProjectScreen(workspace: Workspace, project: Workspace.Project, onClose: () 
                         },
                         MenuItem(stringResource(R.string.CloseTab), enabled = current != null) {
                             current?.let(::requestCloseTab)
+                        },
+                        MenuItem(stringResource(R.string.ExportDesktopProject), enabled = isMod) {
+                            projectExporter.launch("${modId}-sources.zip")
                         },
                         MenuItem(stringResource(R.string.OpenBunnyLoader)) { BunnyLoader.openLauncher(context) },
                         MenuItem(stringResource(R.string.Projects)) { leave() },

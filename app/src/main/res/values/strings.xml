@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="ExportDesktopProject">Export desktop project (.zip)</string>
+    <string name="DesktopProjectExported">Desktop project exported. Extract the ZIP and open the C# project on your computer.</string>
     <string name="AppName" translatable="false">BL Editor</string>
     <string name="ConnectTitle">Connect to Bunny Loader</string>
     <string name="ConnectDescription">BL Editor edits the mod projects in the Bunny Loader ModSources folder and opens the game with your changes. No root needed.</string>

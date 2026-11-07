@@ -13,3 +13,5 @@ out/
 .claude/
 tools/*/bin/
 tools/*/obj/
+tools/modsdk/**/bin/
+tools/modsdk/**/obj/

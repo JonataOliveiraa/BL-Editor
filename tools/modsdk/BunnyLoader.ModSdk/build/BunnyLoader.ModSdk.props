@@ -1,0 +1,11 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework Condition="'$(TargetFramework)' == ''">net10.0</TargetFramework>
+    <Nullable Condition="'$(Nullable)' == ''">enable</Nullable>
+    <ImplicitUsings Condition="'$(ImplicitUsings)' == ''">disable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <BunnyLoaderPackageOnBuild Condition="'$(BunnyLoaderPackageOnBuild)' == ''">true</BunnyLoaderPackageOnBuild>
+    <BunnyLoaderPackageDir Condition="'$(BunnyLoaderPackageDir)' == ''">$(MSBuildProjectDirectory)/artifacts</BunnyLoaderPackageDir>
+    <DefaultItemExcludes>$(DefaultItemExcludes);$(MSBuildProjectDirectory)/artifacts/**;$(MSBuildProjectDirectory)/refs/**;$(MSBuildProjectDirectory)/BunnyLoaderSDK/**;$(BunnyLoaderPackageDir)/**</DefaultItemExcludes>
+  </PropertyGroup>
+</Project>

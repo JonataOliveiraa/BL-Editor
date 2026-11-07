@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="ExportDesktopProject">Xuất dự án cho máy tính (ZIP)</string>
+    <string name="DesktopProjectExported">Đã xuất dự án. Giải nén ZIP và mở dự án C# trên máy tính.</string>
     <string name="ConnectTitle">Kết nối với Bunny Loader</string>
     <string name="ConnectDescription">BL Editor chỉnh sửa các dự án trong thư mục ModSources của Bunny Loader và mở trò chơi với thay đổi của bạn. Không cần root.</string>
     <string name="Connect">Kết nối</string>

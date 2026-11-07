@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="ExportDesktopProject">ส่งออกโปรเจกต์สำหรับคอมพิวเตอร์ (ZIP)</string>
+    <string name="DesktopProjectExported">ส่งออกโปรเจกต์แล้ว แตกไฟล์ ZIP แล้วเปิดโปรเจกต์ C# บนคอมพิวเตอร์</string>
     <string name="ConnectTitle">เชื่อมต่อกับ Bunny Loader</string>
     <string name="ConnectDescription">BL Editor แก้ไขโปรเจกต์ในโฟลเดอร์ ModSources ของ Bunny Loader และเปิดเกมพร้อมการเปลี่ยนแปลงของคุณ ไม่ต้องใช้ root</string>
     <string name="Connect">เชื่อมต่อ</string>

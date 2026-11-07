@@ -1,5 +1,6 @@
 package dev.bunnyloader.editor
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -110,6 +111,7 @@ class Workspace(private val context: Context, val tree: Uri) {
         return found
     }
 
+    @SuppressLint("ByteOrderMark")
     fun readText(uri: Uri): String {
         val bytes = resolver.openInputStream(uri)?.use { input ->
             val buffer = java.io.ByteArrayOutputStream()
@@ -123,7 +125,7 @@ class Workspace(private val context: Context, val tree: Uri) {
             buffer.toByteArray()
         } ?: error(context.getString(R.string.ErrOpenFile))
         if (bytes.take(8192).any { it == 0.toByte() }) throw Binary()
-        return String(bytes, Charsets.UTF_8).removePrefix("﻿")
+        return String(bytes, Charsets.UTF_8).removePrefix("")
     }
 
     fun writeText(uri: Uri, text: String) {
@@ -143,7 +145,26 @@ class Workspace(private val context: Context, val tree: Uri) {
     fun createFile(parent: Uri, name: String): Uri {
         validateName(name)
         check(children(parent).none { it.name.equals(name, true) }) { context.getString(R.string.ErrExists, name) }
-        return Docs.createDocument(resolver, parent, "text/plain", name) ?: error(context.getString(R.string.ErrCreate, name))
+        val extension = name.substringAfterLast('.', "").lowercase()
+        val mime = android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
+            ?: "application/octet-stream"
+        var uri = Docs.createDocument(resolver, parent, mime, name)
+            ?: error(context.getString(R.string.ErrCreate, name))
+        fun actualName(): String? = resolver.query(uri, arrayOf(Docs.Document.COLUMN_DISPLAY_NAME), null, null, null)?.use {
+            if (it.moveToFirst()) it.getString(0) else null
+        }
+        try {
+            // Some SAF providers append an extension based on MIME type. Keep the requested source filename.
+            if (actualName() != name) {
+                uri = Docs.renameDocument(resolver, uri, name)
+                    ?: error(context.getString(R.string.ErrCreate, name))
+                check(actualName() == name) { context.getString(R.string.ErrCreate, name) }
+            }
+            return uri
+        } catch (e: Exception) {
+            runCatching { Docs.deleteDocument(resolver, uri) }
+            throw e
+        }
     }
 
     /** The file at [path] under [base], creating what is missing; an existing one is reused. */
@@ -167,15 +188,18 @@ class Workspace(private val context: Context, val tree: Uri) {
         return result
     }
 
-    /**
-     * The project as a package Bunny Loader imports (a zip with the manifest at the root), leaving out
-     * what its own packager leaves out.
-     */
-    fun exportPackage(folder: Uri, out: java.io.OutputStream) {
+    /** Installable package, without project files or build output. */
+    fun exportPackage(folder: Uri, out: java.io.OutputStream) =
+        exportZip(folder, out, ProjectExport::includePackage)
+
+    /** Source project ZIP retains the generated C# project. */
+    fun exportProject(folder: Uri, out: java.io.OutputStream) =
+        exportZip(folder, out, ProjectExport::includeSource)
+
+    private fun exportZip(folder: Uri, out: java.io.OutputStream, include: (String) -> Boolean) {
         java.util.zip.ZipOutputStream(out.buffered()).use { zip ->
             for (file in allFiles(folder)) {
-                val parts = file.path.split('/')
-                if (parts.any { part -> EXCLUDED_FOLDERS.any { it.equals(part, true) } } || file.name.endsWith(".csproj", true)) continue
+                if (!include(file.path)) continue
                 zip.putNextEntry(java.util.zip.ZipEntry(file.path).apply { time = 0L })
                 resolver.openInputStream(file.uri)?.use { it.copyTo(zip) } ?: error(context.getString(R.string.ErrReadName, file.path))
                 zip.closeEntry()
@@ -209,8 +233,7 @@ class Workspace(private val context: Context, val tree: Uri) {
         val extension = original.substringAfterLast('.', "").let { if (it.isEmpty()) "" else ".$it" }
         val name = generateSequence(1) { it + 1 }.map { if (it == 1) original else "$stem ($it)$extension" }
             .first { it.lowercase() !in taken }
-        val target = Docs.createDocument(resolver, parent, "application/octet-stream", name)
-            ?: error(context.getString(R.string.ErrCreate, name))
+        val target = createFile(parent, name)
         try {
             resolver.openInputStream(source)?.use { input ->
                 resolver.openOutputStream(target, "wt")?.use { input.copyTo(it) } ?: error(context.getString(R.string.ErrWriteFile))
@@ -234,8 +257,8 @@ class Workspace(private val context: Context, val tree: Uri) {
     )
 
     /**
-     * A new project, in Bunny Loader's format 3. A mod: manifest.json, the Mod class in `<id>.cs` at
-     * the root, Assets/, Common/, Content/ and Localization/. A pack: manifest.json and Images/ or
+     * A new project, in Bunny Loader's format 3. A mod: manifest.json, the Mod class in `<id>.cs`,
+     * a portable `<id>.csproj`, Assets/, Common/, Content/ and Localization/. A pack: manifest.json and Images/ or
      * Fonts/. With a picture, icon.png. Returns the folder.
      */
     fun createProject(mod: NewMod): String {
@@ -272,6 +295,7 @@ class Workspace(private val context: Context, val tree: Uri) {
                     val className = if (mod.id in CSHARP_KEYWORDS) "${mod.id}Mod" else mod.id
                     val code = "using Terraria.ModLoader;\n\nnamespace $namespace;\n\npublic class $className : Mod\n{\n}\n"
                     writeText(createFile(folder, "${mod.id}.cs"), code)
+                    writeText(createFile(folder, "${mod.id}.csproj"), ModProjectFile.generate(namespace))
                     writeText(createFile(folder, "description.md"), "# ${mod.name.trim()}\n")
                 }
                 Kind.TEXTURE -> createFolder(folder, "Images")
@@ -311,7 +335,6 @@ class Workspace(private val context: Context, val tree: Uri) {
     companion object {
         const val MANIFEST = "manifest.json"
         const val BL_VERSION = 3
-        private val EXCLUDED_FOLDERS = listOf("build", "bin", "obj")
         private const val MAX_TEXT_BYTES = 2 * 1024 * 1024
         /**
          * Lowercase: what the Bunny Loader catalog accepts for publishing. Bunny Loader also needs it

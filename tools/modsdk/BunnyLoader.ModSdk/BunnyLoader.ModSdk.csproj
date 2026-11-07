@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <PackageId>BunnyLoader.ModSdk</PackageId>
+    <Version>0.3.1</Version>
+    <PackageProjectUrl>https://github.com/bilimoing/BunnyLoader.ModSdk</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/bilimoing/BunnyLoader.ModSdk.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseFile>PACKAGE-LICENSE.txt</PackageLicenseFile>
+    <Authors>BL Editor contributors</Authors>
+    <Description>Self-contained compile-time BunnyLoader API and deterministic format 3 source packaging for C# mods.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <!-- Tasks live outside lib; ref-only API intentionally has no runtime lib counterpart. -->
+    <NoWarn>$(NoWarn);NU5100;NU5128;NU5131</NoWarn>
+    <BuildProjectReferences Condition="'$(NoBuild)' == 'true'">false</BuildProjectReferences>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <BunnyLoaderTasksAssembly>$(MSBuildProjectDirectory)/../BunnyLoader.Build.Tasks/bin/$(Configuration)/net10.0/BunnyLoader.Build.Tasks.dll</BunnyLoaderTasksAssembly>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../BunnyLoader.Build.Tasks/BunnyLoader.Build.Tasks.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" />
+    <None Include="build/*" Pack="true" PackagePath="build/" />
+    <None Include="../../../README.md" Pack="true" PackagePath="/" />
+    <None Include="../LICENSE" Pack="true" PackagePath="/" />
+    <None Include="../PACKAGE-LICENSE.txt" Pack="true" PackagePath="/" />
+    <None Include="$(BunnyLoaderTasksAssembly)" Pack="true" PackagePath="tasks/net10.0/" />
+  </ItemGroup>
+  <UsingTask TaskName="BunnyLoader.Build.ValidateApi" AssemblyFile="$(BunnyLoaderTasksAssembly)" />
+  <!-- Run after building tasks and before NuGet gathers package files, including packs that skip building. -->
+  <Target Name="BunnyLoaderValidatePackageApi" BeforeTargets="_GetPackageFiles" DependsOnTargets="ResolveReferences">
+    <Error Condition="'$(BunnyLoaderApiPath)' == ''" Text="BLSDK003: Packing requires explicit -p:BunnyLoaderApiPath=&lt;absolute path to BunnyLoader.dll&gt;. No machine-local API default is used." />
+    <ItemGroup>
+      <_BunnyLoaderAdditionalApi Include="$(BunnyLoaderAdditionalApiPaths)" />
+    </ItemGroup>
+    <BunnyLoader.Build.ValidateApi ApiPath="$(BunnyLoaderApiPath)" AdditionalReferences="@(_BunnyLoaderAdditionalApi)" FrameworkReferences="@(ReferencePath)" />
+    <PropertyGroup>
+      <_BunnyLoaderApiXml>$([System.IO.Path]::ChangeExtension('$(BunnyLoaderApiPath)', '.xml'))</_BunnyLoaderApiXml>
+    </PropertyGroup>
+    <ItemGroup>
+      <None Include="$(BunnyLoaderApiPath)" Pack="true" PackagePath="ref/net10.0/BunnyLoader.dll" />
+      <None Include="@(_BunnyLoaderAdditionalApi)" Pack="true" PackagePath="ref/net10.0/" />
+      <None Include="$(_BunnyLoaderApiXml)" Condition="Exists('$(_BunnyLoaderApiXml)')" Pack="true" PackagePath="ref/net10.0/BunnyLoader.xml" />
+    </ItemGroup>
+  </Target>
+</Project>
