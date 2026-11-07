@@ -1,0 +1,22 @@
+<Project>
+  <PropertyGroup>
+    <BunnyLoaderTasksAssembly>$(MSBuildThisFileDirectory)../tasks/net10.0/BunnyLoader.Build.Tasks.dll</BunnyLoaderTasksAssembly>
+  </PropertyGroup>
+  <UsingTask TaskName="BunnyLoader.Build.PackMod" AssemblyFile="$(BunnyLoaderTasksAssembly)" />
+  <Target Name="BunnyLoaderValidateProject" BeforeTargets="ResolveAssemblyReferences" Condition="'$(DesignTimeBuild)' != 'true'">
+    <Error Condition="'$(TargetFramework)' != 'net10.0'" Text="BLSDK002: BunnyLoader C# mods require TargetFramework net10.0 and the .NET 10 SDK (dotnet build)." />
+    <Error Condition="!Exists('$(MSBuildThisFileDirectory)../ref/net10.0/BunnyLoader.dll')" Text="BLSDK003: This BunnyLoader.ModSdk package is incomplete: ref/net10.0/BunnyLoader.dll is missing. Restore or reinstall the official package." />
+    <Error Condition="!Exists('$(MSBuildProjectDirectory)/manifest.json')" Text="BLSDK004: Missing manifest.json in the Mod project root." />
+  </Target>
+  <Target Name="BunnyLoaderPack" DependsOnTargets="Build;BunnyLoaderCreatePackageExplicit" Condition="'$(DesignTimeBuild)' != 'true'" />
+  <Target Name="BunnyLoaderCreatePackageExplicit" Condition="'$(DesignTimeBuild)' != 'true' and '$(BunnyLoaderPackageOnBuild)' != 'true'">
+    <BunnyLoader.Build.PackMod ProjectDirectory="$(MSBuildProjectDirectory)" OutputDirectory="$(BunnyLoaderPackageDir)">
+      <Output TaskParameter="PackagePath" PropertyName="BunnyLoaderPackagePath" />
+    </BunnyLoader.Build.PackMod>
+  </Target>
+  <Target Name="BunnyLoaderCreatePackage" AfterTargets="Build" Condition="'$(DesignTimeBuild)' != 'true' and '$(BunnyLoaderPackageOnBuild)' == 'true'">
+    <BunnyLoader.Build.PackMod ProjectDirectory="$(MSBuildProjectDirectory)" OutputDirectory="$(BunnyLoaderPackageDir)">
+      <Output TaskParameter="PackagePath" PropertyName="BunnyLoaderPackagePath" />
+    </BunnyLoader.Build.PackMod>
+  </Target>
+</Project>

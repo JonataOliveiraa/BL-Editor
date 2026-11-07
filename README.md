@@ -11,6 +11,8 @@ and font packs. C# is the only language for mods, as in Bunny Loader itself.
 
 ## Writing C#
 
+- **Desktop projects**: new Mods include a `.csproj` referencing `BunnyLoader.ModSdk` from NuGet. **Export desktop project (.zip)** keeps the project, sources and resources for opening in a C# IDE (.NET 10 SDK required).
+
 - **IntelliSense over the real API**: the Bunny Loader, Terraria, ReLogic and XNA types and the common .NET namespaces,
   built into the app as a tree of about 21 000 types and 135 000 members.
   - Members after `.`, through chains (`Main.LocalPlayer.GetDamage(DamageClass.Melee).`), indexers, generics and `var`.

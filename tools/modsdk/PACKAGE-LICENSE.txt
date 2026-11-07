@@ -1,0 +1,15 @@
+BunnyLoader.ModSdk package licensing scope
+
+The SDK build tasks, MSBuild props/targets and documentation are licensed
+under the MIT License reproduced in LICENSE.
+Copyright (c) 2026 bilimoing.
+
+The externally supplied ref/net10.0/BunnyLoader.dll and any additional
+API reference assemblies are excluded from that MIT grant. All rights in
+those assemblies and their included third-party content remain with their
+respective rights holders. This package does not grant permission to
+redistribute, modify or sublicense that external content.
+
+No external API redistribution license has been verified for this package.
+This notice describes licensing scope; it is not a license grant for the
+external API. Obtain applicable authorization before public distribution.

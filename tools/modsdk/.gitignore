@@ -1,0 +1,5 @@
+**/bin/
+**/obj/
+artifacts/
+!BunnyLoader.ModSdk/build/
+!BunnyLoader.ModSdk/build/*
